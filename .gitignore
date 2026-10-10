@@ -1,1 +1,25 @@
+# Dependencies
 node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Generated files
+package-lock.json
+packages/shared/src/db/schema.js
+packages/shared/src/db/schema.d.ts
+
+# Environment secrets
+.env
+.env.local
+.env.production
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
