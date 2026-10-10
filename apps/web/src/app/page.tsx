@@ -1,15 +1,12 @@
 import React from 'react';
 import { getLiveHomepageData } from './actions/homepage';
-import { FaqSection } from './FaqSection';
 import Link from 'next/link';
-import { Download, PlayCircle, Trophy, Star, ShieldCheck, ChevronRight, HelpCircle, Phone, Clock, BadgeCheck, MessageCircle, ChevronDown } from 'lucide-react';
-
+import { Download, HelpCircle, Phone, MessageCircle, ChevronDown } from 'lucide-react';
+import StickyDownloadBar from '@/components/StickyDownloadBar';
 
 export default async function HomePage() {
   const { mainGames: games, starlineGames, jackpotGames } = await getLiveHomepageData();
 
-  
-  
   const faqs = [
     { q: "What is Lucky777 and what does it provide for satta matka players?", a: "Lucky777 is a premium platform dedicated to providing the fastest and most accurate satta matka results, charts, and guessing forums for players across India." },
     { q: "How does Lucky777 verify the satta matka result before posting it?", a: "We have a dedicated team that verifies results directly from the core markets. Multiple independent sources are cross-checked before any result is published to ensure 100% accuracy." },
@@ -22,9 +19,20 @@ export default async function HomePage() {
     { q: "Is Lucky777 free to use for satta matka results and charts?", a: "Yes, viewing live results, historical charts, and reading community guessing is completely free for all users on our platform." },
   ];
 
+  const marketList = [
+    "SHREE GANESH", "OMKAR MORNING", "GOA MORNING", "SRIDEVI",
+    "TIME BAZAR", "MADHUR DAY", "GOA DAY", "MILAN DAY",
+    "RAJDHANI DAY", "OMKAR DAY", "KALYAN", "SRIDEVI NIGHT",
+    "MADHUR NIGHT", "GOA NIGHT", "MILAN NIGHT", "OMKAR NIGHT",
+    "RAJDHANI NIGHT", "KALYAN NIGHT", "MAIN BAZAR"
+  ];
+
   return (
     <div className="w-full min-h-screen bg-white flex flex-col font-sans text-gray-900">
-      
+
+      {/* Sticky Floating Download Bar (client component) */}
+      <StickyDownloadBar />
+
       {/* 1. Black Top Nav */}
       <header className="w-full bg-black text-white sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -35,26 +43,20 @@ export default async function HomePage() {
             </div>
             <span className="font-sans font-black text-2xl italic tracking-tighter">LUCKY777</span>
           </div>
-          
+
           {/* Desktop Navigation Links */}
           <nav className="hidden lg:flex items-center gap-6 text-[13px] font-medium text-gray-300 h-full">
             <Link href="/" className="flex flex-col items-center justify-center text-[#ff4b4b] transition-colors relative h-full">
               <span>Home</span>
               <span className="w-1 h-1 rounded-full bg-[#ff4b4b] absolute bottom-4"></span>
             </Link>
-            
+
             <div className="relative group h-full flex items-center">
               <div className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors">
                 <span>Jodi Charts</span> <ChevronDown className="w-3.5 h-3.5 opacity-70 group-hover:rotate-180 transition-transform duration-200" />
               </div>
               <div className="absolute top-[64px] -left-4 bg-[#111] border border-gray-800 rounded-b-xl shadow-2xl w-48 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 flex flex-col max-h-[70vh] overflow-y-auto no-scrollbar">
-                {[
-                  "SHREE GANESH", "OMKAR MORNING", "GOA MORNING", "SRIDEVI", 
-                  "TIME BAZAR", "MADHUR DAY", "GOA DAY", "MILAN DAY", 
-                  "RAJDHANI DAY", "OMKAR DAY", "KALYAN", "SRIDEVI NIGHT", 
-                  "MADHUR NIGHT", "GOA NIGHT", "MILAN NIGHT", "OMKAR NIGHT", 
-                  "RAJDHANI NIGHT", "KALYAN NIGHT", "MAIN BAZAR"
-                ].map((item, idx) => (
+                {marketList.map((item, idx) => (
                   <Link key={idx} href={`/chart/jodi/${item.toLowerCase().replace(/ /g, '-')}`} className="px-4 py-2.5 hover:bg-gray-800 text-gray-400 hover:text-white text-xs uppercase whitespace-nowrap transition-colors">
                     {item}
                   </Link>
@@ -67,13 +69,7 @@ export default async function HomePage() {
                 <span>Pana Charts</span> <ChevronDown className="w-3.5 h-3.5 opacity-70 group-hover:rotate-180 transition-transform duration-200" />
               </div>
               <div className="absolute top-[64px] -left-4 bg-[#111] border border-gray-800 rounded-b-xl shadow-2xl w-48 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 flex flex-col max-h-[70vh] overflow-y-auto no-scrollbar">
-                {[
-                  "SHREE GANESH", "OMKAR MORNING", "GOA MORNING", "SRIDEVI", 
-                  "TIME BAZAR", "MADHUR DAY", "GOA DAY", "MILAN DAY", 
-                  "RAJDHANI DAY", "OMKAR DAY", "KALYAN", "SRIDEVI NIGHT", 
-                  "MADHUR NIGHT", "GOA NIGHT", "MILAN NIGHT", "OMKAR NIGHT", 
-                  "RAJDHANI NIGHT", "KALYAN NIGHT", "MAIN BAZAR"
-                ].map((item, idx) => (
+                {marketList.map((item, idx) => (
                   <Link key={idx} href={`/chart/pana/${item.toLowerCase().replace(/ /g, '-')}`} className="px-4 py-2.5 hover:bg-gray-800 text-gray-400 hover:text-white text-xs uppercase whitespace-nowrap transition-colors">
                     {item}
                   </Link>
@@ -89,11 +85,7 @@ export default async function HomePage() {
                 <Link href="/chart/starline/all" className="px-4 py-2.5 hover:bg-gray-800 text-[#ff4b4b] font-bold hover:text-[#ff6b6b] text-xs uppercase whitespace-nowrap transition-colors border-b border-gray-800 mb-1">
                   All Starline Pana Charts
                 </Link>
-                {[
-                  "10:30 AM", "11:30 AM", "12:30 PM", "01:30 PM", 
-                  "02:30 PM", "03:30 PM", "04:30 PM", "05:30 PM", 
-                  "06:30 PM", "07:30 PM"
-                ].map((item, idx) => (
+                {["10:30 AM", "11:30 AM", "12:30 PM", "01:30 PM", "02:30 PM", "03:30 PM", "04:30 PM", "05:30 PM", "06:30 PM", "07:30 PM"].map((item, idx) => (
                   <Link key={idx} href={`/chart/starline/${item.replace(/[: ]/g, '').toLowerCase()}`} className="px-4 py-2.5 hover:bg-gray-800 text-gray-400 hover:text-white text-xs uppercase whitespace-nowrap transition-colors">
                     {item}
                   </Link>
@@ -109,22 +101,17 @@ export default async function HomePage() {
                 <Link href="/chart/jackpot/all" className="px-4 py-2.5 hover:bg-gray-800 text-[#ff4b4b] font-bold hover:text-[#ff6b6b] text-xs uppercase whitespace-nowrap transition-colors border-b border-gray-800 mb-1">
                   All Jackpot Jodi Charts
                 </Link>
-                {[
-                  "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", 
-                  "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM", 
-                  "06:00 PM", "07:00 PM"
-                ].map((item, idx) => (
+                {["10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"].map((item, idx) => (
                   <Link key={idx} href={`/chart/jackpot/${item.replace(/[: ]/g, '').toLowerCase()}`} className="px-4 py-2.5 hover:bg-gray-800 text-gray-400 hover:text-white text-xs uppercase whitespace-nowrap transition-colors">
                     {item}
                   </Link>
                 ))}
               </div>
             </div>
-
           </nav>
 
           {/* Download Button */}
-          <Link 
+          <Link
             href="/download"
             className="px-6 py-2 rounded-full text-sm font-medium text-white bg-[#ff4b4b] hover:bg-red-500 transition-colors shadow-[0_0_15px_rgba(255,75,75,0.4)]"
           >
@@ -134,8 +121,8 @@ export default async function HomePage() {
       </header>
 
       {/* 2. Hero Banner */}
-      <section 
-        className="w-full relative overflow-visible pt-12 pb-24 border-b border-gray-100"
+      <section
+        className="w-full relative overflow-hidden pt-12 pb-24 border-b border-gray-100"
         style={{
           background: `
             radial-gradient(circle at 35% 50%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 50%),
@@ -144,7 +131,7 @@ export default async function HomePage() {
           `
         }}
       >
-        
+
         {/* Floating Stars */}
         <div className="absolute top-[15%] left-[22%] text-[#ffcb05] z-10 drop-shadow-md">
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8"><path d="M12 0L13.8 10.2L24 12L13.8 13.8L12 24L10.2 13.8L0 12L10.2 10.2L12 0Z" /></svg>
@@ -154,11 +141,11 @@ export default async function HomePage() {
         </div>
 
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-center relative z-20 px-4">
-          
+
           {/* Left Text Content */}
           <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left space-y-0 relative z-20 md:pl-20">
-            
-            {/* Top Badge (India's No.1 Trusted App) */}
+
+            {/* Top Badge */}
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full text-[10px] sm:text-xs font-bold text-gray-700 shadow-md border border-yellow-100 mb-5">
               <img src="https://flagcdn.com/w20/in.png" alt="India Flag" className="w-4 h-3 rounded-sm object-cover" />
               <span className="tracking-wide">INDIA'S <span className="text-[#e22e28]">NO.1</span> TRUSTED APP</span>
@@ -167,19 +154,19 @@ export default async function HomePage() {
             <div className="text-[10px] sm:text-[12px] font-bold text-gray-500 tracking-[0.3em] uppercase mb-1 drop-shadow-sm">
               Welcome To
             </div>
-            
+
             <h1 className="text-7xl sm:text-[90px] leading-[1] font-black text-[#e42e2a] italic tracking-[-0.04em] mb-1" style={{ textShadow: '2px 2px 0px rgba(255,255,255,0.8)' }}>
               LUCKY777
             </h1>
-            
+
             <h2 className="text-[42px] sm:text-[54px] leading-[1.1] font-black text-[#e42e2a] italic" style={{ textShadow: '2px 2px 0px rgba(255,255,255,0.8)' }}>
               Free ₹100/-
             </h2>
-            
+
             <h3 className="text-[34px] sm:text-[42px] leading-[1.1] font-black text-[#1b2138] italic mb-6" style={{ textShadow: '2px 2px 0px rgba(255,255,255,0.8)' }}>
               Welcome Bonus
             </h3>
-            
+
             {/* Bottom Badge (Min Deposit) */}
             <div className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-white rounded-full text-xs font-bold text-gray-800 shadow-md">
               <span className="text-base">💰</span>
@@ -187,121 +174,87 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* Right Image Content */}
-          <div className="flex-1 mt-10 md:mt-0 flex justify-center md:justify-end relative z-10 w-full pointer-events-none md:pr-10">
-             <img src="/hero-woman.png" alt="Lucky 777 Woman" className="w-[320px] sm:w-[450px] object-contain drop-shadow-2xl translate-y-6" />
+          {/* Right Image — smaller, contained, no overflow */}
+          <div className="flex-shrink-0 mt-6 md:mt-0 flex justify-center md:justify-end relative z-10 md:pr-10">
+            <img
+              src="/hero-woman.png"
+              alt="Lucky 777 Woman"
+              className="w-[220px] sm:w-[280px] md:w-[300px] object-contain drop-shadow-xl"
+            />
           </div>
         </div>
 
-        {/* 3. Floating Download APK Bar (Centered Pill) */}
+        {/* Floating Download APK Bar */}
         <div className="absolute bottom-0 left-0 right-0 translate-y-1/2 z-30 flex justify-center w-full px-4">
-          <Link href="/download" className="w-full max-w-lg group cursor-pointer block relative transition-all duration-300 hover:scale-105 animate-[pulse_3s_ease-in-out_infinite] hover:animate-none">
-            <div className="w-full h-14 md:h-[72px] rounded-full shadow-[0_10px_30px_rgba(228,46,42,0.4)] group-hover:shadow-[0_15px_40px_rgba(228,46,42,0.6)] flex items-center justify-center overflow-hidden relative border-[3px] border-white/20 transition-all duration-300"
-                 style={{
-                   background: 'linear-gradient(90deg, #e42e2a 0%, #ff4b4b 50%, #e42e2a 100%)',
-                   backgroundSize: '200% auto',
-                 }}>
-              
-              {/* Animated Sheen Effect */}
-              <div className="absolute inset-0 translate-x-[-100%] group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12"></div>
-              
-              <div className="flex items-center gap-2.5 text-white font-bold text-[18px] md:text-[20px] tracking-wide relative z-10">
+          <Link href="/download" className="w-full max-w-lg group cursor-pointer block relative transition-all duration-300 hover:scale-105">
+            <div
+              className="w-full h-14 md:h-[68px] rounded-full shadow-[0_10px_30px_rgba(228,46,42,0.45)] group-hover:shadow-[0_20px_50px_rgba(228,46,42,0.65)] flex items-center justify-center overflow-hidden relative border-[3px] border-white/30 transition-all duration-300"
+              style={{ background: 'linear-gradient(90deg, #c41e1a 0%, #e42e2a 40%, #ff5252 70%, #e42e2a 100%)' }}
+            >
+              {/* Animated shimmer on hover */}
+              <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12 pointer-events-none" />
+
+              {/* Pulse ring */}
+              <div className="absolute inset-0 rounded-full animate-ping opacity-20 bg-red-500 group-hover:hidden" />
+
+              <div className="flex items-center gap-3 text-white font-black text-[18px] md:text-[20px] tracking-wide relative z-10">
                 {/* Android Icon */}
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 md:w-7 md:h-7 mb-0.5 group-hover:-translate-y-1 transition-transform duration-300">
-                  <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.81.24l-1.89 3.26C15.03 8.44 13.57 8.1 12 8.1c-1.57 0-3.03.34-4.48.85L5.63 5.69c-.16-.3-.52-.39-.81-.24-.29.16-.42.54-.26.85l1.84 3.18C3.52 11.23 1.6 14.36 1.13 18H22.87c-.47-3.64-2.39-6.77-5.27-8.52zM7 15.25c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25zm10 0c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25z"/>
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 md:w-7 md:h-7 group-hover:-translate-y-0.5 group-hover:scale-110 transition-transform duration-300">
+                  <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.81.24l-1.89 3.26C15.03 8.44 13.57 8.1 12 8.1c-1.57 0-3.03.34-4.48.85L5.63 5.69c-.16-.3-.52-.39-.81-.24-.29.16-.42.54-.26.85l1.84 3.18C3.52 11.23 1.6 14.36 1.13 18H22.87c-.47-3.64-2.39-6.77-5.27-8.52zM7 15.25c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25zm10 0c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25z" />
                 </svg>
-                Download APK
-                <Download className="w-5 h-5 ml-1 opacity-90 group-hover:translate-y-1 transition-transform duration-300" />
+                <span className="group-hover:tracking-widest transition-all duration-300">Download APK</span>
+                <Download className="w-5 h-5 opacity-90 group-hover:translate-y-1 transition-transform duration-300" />
               </div>
             </div>
           </Link>
         </div>
       </section>
 
-      {/* spacer to accommodate the overlapping absolute button */}
+      {/* spacer to accommodate the overlapping pill button */}
       <div className="h-10 md:h-12 bg-white w-full"></div>
 
       {/* 4. Feature Icons */}
       <section className="w-full py-10 bg-white relative z-10">
         <div className="max-w-5xl mx-auto px-4">
-          
+
           {/* Features Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-x-2 gap-y-8 mb-12">
-            {/* Feature 1 */}
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#fff5f5] rounded-full flex items-center justify-center mb-3">
-                <span className="text-4xl sm:text-5xl drop-shadow-md">⭐</span>
+            {[
+              { emoji: "⭐", title: "5 STAR", sub: "RATING" },
+              { emoji: "📥", title: "SUPER FAST", sub: "WITHDRAWAL" },
+              { emoji: "🎧", title: "24/7 VIP", sub: "SUPPORT" },
+              { emoji: "🛡️", title: "100%", sub: "SECURE & TRUSTED" },
+            ].map((f, i) => (
+              <div key={i} className="flex flex-col items-center text-center group">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#fff5f5] rounded-full flex items-center justify-center mb-3 group-hover:bg-[#ffe8e8] group-hover:scale-110 transition-all duration-300 shadow-sm group-hover:shadow-md">
+                  <span className="text-4xl sm:text-5xl drop-shadow-md group-hover:scale-110 transition-transform duration-300">{f.emoji}</span>
+                </div>
+                <h4 className="text-[18px] sm:text-[22px] font-black text-[#1b2138] leading-tight">{f.title}</h4>
+                <p className="text-[10px] sm:text-[11px] font-bold text-gray-500 tracking-wider mb-2 uppercase">{f.sub}</p>
+                <div className="flex items-center gap-[4px] mt-1">
+                  <div className="w-6 h-[2px] bg-[#e42e2a]"></div>
+                  <div className="w-[3px] h-[3px] rounded-full bg-[#e42e2a]"></div>
+                  <div className="w-[3px] h-[3px] rounded-full bg-[#e42e2a]"></div>
+                  <div className="w-[3px] h-[3px] rounded-full bg-[#e42e2a]"></div>
+                </div>
               </div>
-              <h4 className="text-[18px] sm:text-[22px] font-black text-[#1b2138] leading-tight">5 STAR</h4>
-              <p className="text-[10px] sm:text-[11px] font-bold text-gray-500 tracking-wider mb-2 uppercase">RATING</p>
-              <div className="flex items-center gap-[4px] mt-1">
-                <div className="w-6 h-[2px] bg-[#e42e2a]"></div>
-                <div className="w-[3px] h-[3px] rounded-full bg-[#e42e2a]"></div>
-                <div className="w-[3px] h-[3px] rounded-full bg-[#e42e2a]"></div>
-                <div className="w-[3px] h-[3px] rounded-full bg-[#e42e2a]"></div>
-              </div>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#fff5f5] rounded-full flex items-center justify-center mb-3">
-                <span className="text-4xl sm:text-5xl drop-shadow-md">📥</span>
-              </div>
-              <h4 className="text-[18px] sm:text-[22px] font-black text-[#1b2138] leading-tight whitespace-nowrap">SUPER FAST</h4>
-              <p className="text-[10px] sm:text-[11px] font-bold text-gray-500 tracking-wider mb-2 uppercase">WITHDRAWAL</p>
-              <div className="flex items-center gap-[4px] mt-1">
-                <div className="w-6 h-[2px] bg-[#e42e2a]"></div>
-                <div className="w-[3px] h-[3px] rounded-full bg-[#e42e2a]"></div>
-                <div className="w-[3px] h-[3px] rounded-full bg-[#e42e2a]"></div>
-                <div className="w-[3px] h-[3px] rounded-full bg-[#e42e2a]"></div>
-              </div>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#fff5f5] rounded-full flex items-center justify-center mb-3">
-                <span className="text-4xl sm:text-5xl drop-shadow-md">🎧</span>
-              </div>
-              <h4 className="text-[18px] sm:text-[22px] font-black text-[#1b2138] leading-tight">24/7 VIP</h4>
-              <p className="text-[10px] sm:text-[11px] font-bold text-gray-500 tracking-wider mb-2 uppercase">SUPPORT</p>
-              <div className="flex items-center gap-[4px] mt-1">
-                <div className="w-6 h-[2px] bg-[#e42e2a]"></div>
-                <div className="w-[3px] h-[3px] rounded-full bg-[#e42e2a]"></div>
-                <div className="w-[3px] h-[3px] rounded-full bg-[#e42e2a]"></div>
-                <div className="w-[3px] h-[3px] rounded-full bg-[#e42e2a]"></div>
-              </div>
-            </div>
-
-            {/* Feature 4 */}
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#fff5f5] rounded-full flex items-center justify-center mb-3">
-                <span className="text-4xl sm:text-5xl drop-shadow-md">🛡️</span>
-              </div>
-              <h4 className="text-[18px] sm:text-[22px] font-black text-[#1b2138] leading-tight">100%</h4>
-              <p className="text-[10px] sm:text-[11px] font-bold text-gray-500 tracking-wider mb-2 uppercase">SECURE & TRUSTED</p>
-              <div className="flex items-center gap-[4px] mt-1">
-                <div className="w-6 h-[2px] bg-[#e42e2a]"></div>
-                <div className="w-[3px] h-[3px] rounded-full bg-[#e42e2a]"></div>
-                <div className="w-[3px] h-[3px] rounded-full bg-[#e42e2a]"></div>
-                <div className="w-[3px] h-[3px] rounded-full bg-[#e42e2a]"></div>
-              </div>
-            </div>
+            ))}
           </div>
 
           {/* Contact Buttons Container */}
           <div className="w-full max-w-3xl mx-auto border border-[#f4dbdb] rounded-2xl p-2 md:p-3 flex flex-col sm:flex-row gap-2 md:gap-3 bg-white">
             {/* Call Now */}
-            <Link href="tel:+919876543210" className="flex-1 block">
-              <div className="w-full h-12 md:h-14 bg-[#de302a] hover:bg-[#c92424] transition-colors rounded-xl flex items-center justify-center gap-2 text-white shadow-sm cursor-pointer">
-                <Phone className="w-5 h-5 fill-current" />
+            <Link href="tel:+919876543210" className="flex-1 block group">
+              <div className="w-full h-12 md:h-14 bg-[#de302a] hover:bg-[#c92424] transition-all duration-200 rounded-xl flex items-center justify-center gap-2 text-white shadow-sm cursor-pointer group-hover:shadow-[0_4px_20px_rgba(222,48,42,0.4)] group-hover:scale-[1.02]">
+                <Phone className="w-5 h-5 fill-current group-hover:rotate-12 transition-transform duration-300" />
                 <span className="font-semibold text-[15px]">Call Now</span>
               </div>
             </Link>
 
             {/* WhatsApp */}
-            <Link href="https://wa.me/919876543210" target="_blank" className="flex-1 block">
-              <div className="w-full h-12 md:h-14 bg-[#1b873b] hover:bg-[#167030] transition-colors rounded-xl flex items-center justify-center gap-2 text-white shadow-sm cursor-pointer">
-                <MessageCircle className="w-5 h-5 fill-current" />
+            <Link href="https://wa.me/919876543210" target="_blank" className="flex-1 block group">
+              <div className="w-full h-12 md:h-14 bg-[#1b873b] hover:bg-[#167030] transition-all duration-200 rounded-xl flex items-center justify-center gap-2 text-white shadow-sm cursor-pointer group-hover:shadow-[0_4px_20px_rgba(27,135,59,0.4)] group-hover:scale-[1.02]">
+                <MessageCircle className="w-5 h-5 fill-current group-hover:scale-110 transition-transform duration-300" />
                 <span className="font-semibold text-[15px]">WhatsApp</span>
               </div>
             </Link>
@@ -315,8 +268,7 @@ export default async function HomePage() {
           <h2 className="text-[28px] md:text-[34px] font-black text-[#111] tracking-tight mb-6">
             Today's Top Winners
           </h2>
-          
-          {/* Horizontal Marquee Container (Restricted to container width) */}
+
           <div className="relative w-full flex overflow-hidden mask-edges pb-2">
             <style dangerouslySetInnerHTML={{__html: `
               @keyframes marquee {
@@ -336,9 +288,8 @@ export default async function HomePage() {
                 -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
               }
             `}} />
-            
+
             <div className="animate-marquee gap-4 pr-4">
-              {/* We duplicate the list so the scroll is infinite and seamless */}
               {[
                 { rank: 1, name: "Rahul Sharma", amount: 98540 },
                 { rank: 2, name: "Priya Patel", amount: 84210 },
@@ -350,7 +301,6 @@ export default async function HomePage() {
                 { rank: 8, name: "Krupa Vyas", amount: 42167 },
                 { rank: 9, name: "Amit Singh", amount: 38400 },
                 { rank: 10, name: "Neha Gupta", amount: 35200 },
-                // Duplicated for infinite effect
                 { rank: 1, name: "Rahul Sharma", amount: 98540 },
                 { rank: 2, name: "Priya Patel", amount: 84210 },
                 { rank: 3, name: "Rekha Kumari", amount: 65957 },
@@ -397,8 +347,8 @@ export default async function HomePage() {
                 { label: 'Half Sangam B', rate: '₹1 KA ₹1000' },
                 { label: 'Full Sangam Digits', rate: '₹1 KA ₹10000' },
               ].map((r, i) => (
-                <div key={i} className="flex justify-between items-center border border-gray-200 rounded-[10px] py-4 px-5 bg-white shadow-sm hover:border-gray-300 transition-colors">
-                  <span className="text-[16px] md:text-[17px] font-bold text-[#111]">{r.label}</span>
+                <div key={i} className="flex justify-between items-center border border-gray-200 rounded-[10px] py-4 px-5 bg-white shadow-sm hover:border-[#e42e2a]/40 hover:shadow-md transition-all duration-200 group">
+                  <span className="text-[16px] md:text-[17px] font-bold text-[#111] group-hover:text-[#e42e2a] transition-colors duration-200">{r.label}</span>
                   <span className="text-[16px] md:text-[17px] font-black text-[#e42e2a]">{r.rate}</span>
                 </div>
               ))}
@@ -407,17 +357,15 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 8. Best Games For You (Grid) */}
+      {/* 8. Best Games For You */}
       <section className="w-full py-8 mx-auto relative z-10 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-[28px] md:text-[34px] font-black text-[#111] tracking-tight mb-6">
             Best Games for You
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {games.map((market) => (
-              <div key={market.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
-                
-                {/* Top Half: Name & Result */}
+            {games.map((market: any) => (
+              <div key={market.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col hover:shadow-md hover:border-gray-300 transition-all duration-200">
                 <div className="p-4 flex justify-between items-start">
                   <div>
                     <div className="flex items-center gap-1 mb-1">
@@ -428,111 +376,76 @@ export default async function HomePage() {
                       {market.result}
                     </div>
                   </div>
-                  <button className="bg-[#a3a3a3] hover:bg-[#8c8c8c] transition-colors text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1">
+                  <button className="bg-[#a3a3a3] hover:bg-[#e42e2a] transition-colors text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                     Play
                   </button>
                 </div>
-
-                {/* Divider */}
                 <div className="w-full h-px bg-gray-100"></div>
-
-                {/* Bottom Half: Chart Buttons */}
                 <div className="p-3 px-4 flex justify-between">
-                  <button className="border border-[#de302a] text-[#de302a] hover:bg-red-50 transition-colors rounded-full px-4 py-1 text-[11px] font-bold">
-                    Jodi Chart
-                  </button>
-                  <button className="border border-[#de302a] text-[#de302a] hover:bg-red-50 transition-colors rounded-full px-4 py-1 text-[11px] font-bold">
-                    Pana Chart
-                  </button>
+                  <button className="border border-[#de302a] text-[#de302a] hover:bg-[#de302a] hover:text-white transition-colors rounded-full px-4 py-1 text-[11px] font-bold">Jodi Chart</button>
+                  <button className="border border-[#de302a] text-[#de302a] hover:bg-[#de302a] hover:text-white transition-colors rounded-full px-4 py-1 text-[11px] font-bold">Pana Chart</button>
                 </div>
-
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 9. Starline Games (Grid) */}
+      {/* 9. Starline Games */}
       <section className="w-full py-8 mx-auto relative z-10 bg-white">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-[28px] md:text-[34px] font-black text-[#111] tracking-tight mb-6">
-            Starline Games
-          </h2>
+          <h2 className="text-[28px] md:text-[34px] font-black text-[#111] tracking-tight mb-6">Starline Games</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {starlineGames.map((market) => (
-              <div key={market.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
-                
-                {/* Top Half: Name & Result */}
+            {starlineGames.map((market: any) => (
+              <div key={market.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col hover:shadow-md hover:border-gray-300 transition-all duration-200">
                 <div className="p-4 flex justify-between items-start">
                   <div>
                     <div className="flex items-center gap-1 mb-1">
                       <h3 className="text-[17px] md:text-[19px] font-black text-[#de302a] tracking-wide">{market.name}</h3>
                       <HelpCircle className="w-3.5 h-3.5 text-[#de302a]" />
                     </div>
-                    <div className="text-[20px] md:text-[22px] font-black tracking-widest text-[#111]">
-                      {market.result}
-                    </div>
+                    <div className="text-[20px] md:text-[22px] font-black tracking-widest text-[#111]">{market.result}</div>
                   </div>
-                  <button className="bg-[#a3a3a3] hover:bg-[#8c8c8c] transition-colors text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1">
+                  <button className="bg-[#a3a3a3] hover:bg-[#e42e2a] transition-colors text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                     Play
                   </button>
                 </div>
-
-                {/* Divider */}
                 <div className="w-full h-px bg-gray-100"></div>
-
-                {/* Bottom Half: Chart Buttons */}
                 <div className="p-3 px-4 flex justify-start">
-                  <button className="border border-[#de302a] text-[#de302a] hover:bg-red-50 transition-colors rounded-full px-4 py-1 text-[11px] font-bold">
-                    Pana Chart
-                  </button>
+                  <button className="border border-[#de302a] text-[#de302a] hover:bg-[#de302a] hover:text-white transition-colors rounded-full px-4 py-1 text-[11px] font-bold">Pana Chart</button>
                 </div>
-
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 10. Jackpot Games (Grid) */}
+      {/* 10. Jackpot Games */}
       <section className="w-full py-8 mx-auto relative z-10 bg-white">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-[28px] md:text-[34px] font-black text-[#111] tracking-tight mb-6">
-            Jackpot Games
-          </h2>
+          <h2 className="text-[28px] md:text-[34px] font-black text-[#111] tracking-tight mb-6">Jackpot Games</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {jackpotGames.map((market) => (
-              <div key={market.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
-                
-                {/* Top Half: Name & Result */}
+            {jackpotGames.map((market: any) => (
+              <div key={market.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col hover:shadow-md hover:border-gray-300 transition-all duration-200">
                 <div className="p-4 flex justify-between items-start">
                   <div>
                     <div className="flex items-center gap-1 mb-1">
                       <h3 className="text-[17px] md:text-[19px] font-black text-[#de302a] tracking-wide">{market.name}</h3>
                       <HelpCircle className="w-3.5 h-3.5 text-[#de302a]" />
                     </div>
-                    <div className="text-[20px] md:text-[22px] font-black tracking-widest text-[#111]">
-                      {market.result}
-                    </div>
+                    <div className="text-[20px] md:text-[22px] font-black tracking-widest text-[#111]">{market.result}</div>
                   </div>
-                  <button className={`transition-colors text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1 ${market.isSpecial ? 'bg-[#de302a] hover:bg-[#c92424]' : 'bg-[#a3a3a3] hover:bg-[#8c8c8c]'}`}>
+                  <button className={`transition-colors text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1 ${market.isSpecial ? 'bg-[#de302a] hover:bg-[#c92424]' : 'bg-[#a3a3a3] hover:bg-[#e42e2a]'}`}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                     Play
                   </button>
                 </div>
-
-                {/* Divider */}
                 <div className="w-full h-px bg-gray-100"></div>
-
-                {/* Bottom Half: Chart Buttons */}
                 <div className="p-3 px-4 flex justify-start">
-                  <button className="border border-[#de302a] text-[#de302a] hover:bg-red-50 transition-colors rounded-full px-4 py-1 text-[11px] font-bold">
-                    Jodi Chart
-                  </button>
+                  <button className="border border-[#de302a] text-[#de302a] hover:bg-[#de302a] hover:text-white transition-colors rounded-full px-4 py-1 text-[11px] font-bold">Jodi Chart</button>
                 </div>
-
               </div>
             ))}
           </div>
@@ -558,7 +471,7 @@ export default async function HomePage() {
         </h2>
         <div className="space-y-3">
           {faqs.map((faq, i) => (
-            <details 
+            <details
               key={i}
               className="bg-white border border-gray-200 p-4 md:p-5 rounded-xl group cursor-pointer hover:border-gray-300 transition-colors shadow-sm"
             >
@@ -576,69 +489,41 @@ export default async function HomePage() {
       </section>
 
       {/* 12. Giant Black Footer */}
-      <footer className="w-full bg-[#0a0a0a] text-white mt-8 pt-12 pb-16">
+      <footer className="w-full bg-[#0a0a0a] text-white mt-8 pt-12 pb-24">
         <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8 text-[13px] text-gray-400">
-          
-          {/* Column 1 */}
+
           <div className="flex flex-col gap-3">
             <span className="text-[#e42e2a] font-bold text-[15px] mb-2">Jodi Charts</span>
-            {[
-              "SHREE GANESH", "OMKAR MORNING", "GOA MORNING", "SRIDEVI", 
-              "TIME BAZAR", "MADHUR DAY", "GOA DAY", "MILAN DAY", 
-              "RAJDHANI DAY", "OMKAR DAY", "KALYAN", "SRIDEVI NIGHT", 
-              "MADHUR NIGHT", "GOA NIGHT", "MILAN NIGHT", "OMKAR NIGHT", 
-              "RAJDHANI NIGHT", "KALYAN NIGHT", "MAIN BAZAR"
-            ].map((item, idx) => (
+            {marketList.map((item, idx) => (
               <Link key={idx} href={`/chart/jodi/${item.toLowerCase().replace(/ /g, '-')}`} className="hover:text-white transition-colors uppercase">
                 {item}
               </Link>
             ))}
           </div>
 
-          {/* Column 2 */}
           <div className="flex flex-col gap-3">
             <span className="text-[#e42e2a] font-bold text-[15px] mb-2">Pana Charts</span>
-            {[
-              "SHREE GANESH", "OMKAR MORNING", "GOA MORNING", "SRIDEVI", 
-              "TIME BAZAR", "MADHUR DAY", "GOA DAY", "MILAN DAY", 
-              "RAJDHANI DAY", "OMKAR DAY", "KALYAN", "SRIDEVI NIGHT", 
-              "MADHUR NIGHT", "GOA NIGHT", "MILAN NIGHT", "OMKAR NIGHT", 
-              "RAJDHANI NIGHT", "KALYAN NIGHT", "MAIN BAZAR"
-            ].map((item, idx) => (
+            {marketList.map((item, idx) => (
               <Link key={idx} href={`/chart/pana/${item.toLowerCase().replace(/ /g, '-')}`} className="hover:text-white transition-colors uppercase">
                 {item}
               </Link>
             ))}
           </div>
 
-          {/* Column 3 */}
           <div className="flex flex-col gap-3">
             <span className="text-[#e42e2a] font-bold text-[15px] mb-2">Starline Charts</span>
-            <Link href="/chart/starline/all" className="hover:text-white transition-colors">
-              All Starline Pana Charts
-            </Link>
-            {[
-              "10:30 AM", "11:30 AM", "12:30 PM", "01:30 PM", 
-              "02:30 PM", "03:30 PM", "04:30 PM", "05:30 PM", 
-              "06:30 PM", "07:30 PM"
-            ].map((item, idx) => (
+            <Link href="/chart/starline/all" className="hover:text-white transition-colors">All Starline Pana Charts</Link>
+            {["10:30 AM", "11:30 AM", "12:30 PM", "01:30 PM", "02:30 PM", "03:30 PM", "04:30 PM", "05:30 PM", "06:30 PM", "07:30 PM"].map((item, idx) => (
               <Link key={idx} href={`/chart/starline/${item.replace(/[: ]/g, '').toLowerCase()}`} className="hover:text-white transition-colors uppercase">
                 {item}
               </Link>
             ))}
           </div>
 
-          {/* Column 4 */}
           <div className="flex flex-col gap-3">
             <span className="text-[#e42e2a] font-bold text-[15px] mb-2">Jackpot Charts</span>
-            <Link href="/chart/jackpot/all" className="hover:text-white transition-colors">
-              All Jackpot Jodi Charts
-            </Link>
-            {[
-              "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", 
-              "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM", 
-              "06:00 PM", "07:00 PM"
-            ].map((item, idx) => (
+            <Link href="/chart/jackpot/all" className="hover:text-white transition-colors">All Jackpot Jodi Charts</Link>
+            {["10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"].map((item, idx) => (
               <Link key={idx} href={`/chart/jackpot/${item.replace(/[: ]/g, '').toLowerCase()}`} className="hover:text-white transition-colors uppercase">
                 {item}
               </Link>
@@ -647,10 +532,7 @@ export default async function HomePage() {
 
         </div>
 
-        {/* Footer Bottom: Logo & 18+ Warning */}
         <div className="max-w-6xl mx-auto px-4 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-          
-          {/* Logo */}
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-sm">
               <span className="font-black text-white text-2xl font-sans">L</span>
@@ -658,7 +540,6 @@ export default async function HomePage() {
             <span className="font-sans font-black text-3xl italic tracking-tighter text-white">LUCKY777</span>
           </div>
 
-          {/* 18+ Warning (Right Side) */}
           <div className="flex flex-col items-start max-w-xs">
             <div className="relative mb-3">
               <div className="w-12 h-12 rounded-full border-[3px] border-[#e42e2a] flex items-center justify-center">
@@ -670,13 +551,15 @@ export default async function HomePage() {
               Players need to be 18+ in order to register. Underage gambling is prohibited.
             </p>
           </div>
-
         </div>
-        
+
         <div className="text-center text-[12px] text-gray-600 mt-12">
           Copyright © 2026 Lucky 777. All rights reserved.
         </div>
       </footer>
+
+      {/* Bottom padding so content isn't hidden behind the sticky bar */}
+      <div className="h-20"></div>
     </div>
   );
 }

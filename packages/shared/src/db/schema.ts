@@ -42,6 +42,15 @@ export const users = pgTable('users', {
   status: userStatusEnum('status').default('ACTIVE').notNull(),
   role: roleEnum('role').default('USER').notNull(),
   phoneVerifiedAt: timestamp('phone_verified_at', { withTimezone: true }),
+  
+  // Payment Details
+  upiId: varchar('upi_id', { length: 100 }),
+  bankAccountName: varchar('bank_account_name', { length: 100 }),
+  bankAccountNumber: varchar('bank_account_number', { length: 50 }),
+  bankIfsc: varchar('bank_ifsc', { length: 20 }),
+  bankName: varchar('bank_name', { length: 100 }),
+  welcomeBonusStatus: varchar('welcome_bonus_status', { length: 30 }).default('NOT PAID').notNull(),
+
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
@@ -261,6 +270,14 @@ export const withdrawals = pgTable('withdrawals', {
   amountMinor: bigint('amount_minor', { mode: 'number' }).notNull(),
   status: varchar('status', { length: 30 }).default('PENDING').notNull(),
   providerReference: text('provider_reference'),
+  
+  actualAmountMinor: bigint('actual_amount_minor', { mode: 'number' }),
+  paymentReference: varchar('payment_reference', { length: 100 }),
+  paymentMethod: varchar('payment_method', { length: 50 }),
+  paymentNote: text('payment_note'),
+  verifiedBy: uuid('verified_by').references(() => users.id),
+  verifiedAt: timestamp('verified_at', { withTimezone: true }),
+
   requestedAt: timestamp('requested_at', { withTimezone: true }).defaultNow().notNull(),
   processedAt: timestamp('processed_at', { withTimezone: true }),
 });
@@ -338,6 +355,10 @@ export const deposits = pgTable('deposits', {
   status: transactionStatusEnum('status').default('PENDING').notNull(),
   utr: varchar('utr', { length: 100 }).notNull().unique(),
   rejectionReason: text('rejection_reason'),
+  
+  actualAmountMinor: bigint('actual_amount_minor', { mode: 'number' }),
+  verifiedAt: timestamp('verified_at', { withTimezone: true }),
+
   requestedAt: timestamp('requested_at', { withTimezone: true }).defaultNow().notNull(),
   processedAt: timestamp('processed_at', { withTimezone: true }),
   processedBy: uuid('processed_by').references(() => users.id),

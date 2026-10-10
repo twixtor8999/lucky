@@ -13,6 +13,8 @@ export default function DepositsTab() {
   const [selectedDeposit, setSelectedDeposit] = useState<any>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [isRejecting, setIsRejecting] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [actualAmount, setActualAmount] = useState('');
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -35,11 +37,16 @@ export default function DepositsTab() {
     dep.utr.includes(searchQuery) || (dep.user && dep.user.phone.includes(searchQuery))
   );
 
-  const handleApprove = async (id: string) => {
-    if (!confirm('Are you sure you want to approve this deposit? Ensure you have verified the UTR in your bank app.')) return;
-    setProcessingId(id);
-    const res = await approveDeposit(id);
+  const handleApprove = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDeposit || !actualAmount) return;
+    
+    setProcessingId(selectedDeposit.id);
+    const res = await approveDeposit(selectedDeposit.id, parseInt(actualAmount));
     if (res.success) {
+      setSelectedDeposit(null);
+      setIsApproving(false);
+      setActualAmount('');
       loadDeposits();
     } else {
       alert(res.error);
@@ -139,7 +146,7 @@ export default function DepositsTab() {
                     </button>
                     <button
                       disabled={processingId === dep.id}
-                      onClick={() => handleApprove(dep.id)}
+                      onClick={() => { setSelectedDeposit(dep); setActualAmount(dep.amount.toString()); setIsApproving(true); }}
                       className="px-4 py-2 rounded-lg bg-green-500 text-white font-bold hover:bg-green-600 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
                     >
                       {processingId === dep.id ? '...' : <Check className="w-4 h-4" />}
@@ -199,7 +206,7 @@ export default function DepositsTab() {
                         </button>
                         <button
                           disabled={processingId === dep.id}
-                          onClick={() => handleApprove(dep.id)}
+                          onClick={() => { setSelectedDeposit(dep); setActualAmount(dep.amount.toString()); setIsApproving(true); }}
                           className="px-4 py-1.5 text-sm font-bold rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-1.5"
                         >
                           {processingId === dep.id ? 'Processing...' : <><Check className="w-4 h-4" /> Approve</>}
@@ -258,6 +265,76 @@ export default function DepositsTab() {
                   className="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all disabled:opacity-70 flex items-center justify-center shadow-sm"
                 >
                   {processingId ? '...' : 'Reject Deposit'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Approve Modal */}
+      {isApproving && selectedDeposit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-green-50">
+              <h3 className="font-bold text-green-900 flex items-center gap-2">
+                <Check className="w-5 h-5 text-green-600" />
+                Approve Deposit
+              </h3>
+              <button 
+                onClick={() => { setIsApproving(false); setSelectedDeposit(null); }} 
+                className="p-1 rounded-full hover:bg-green-100 text-green-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleApprove} className="p-5">
+              <div className="mb-6 space-y-4">
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-gray-500">Player</span>
+                    <span className="font-bold">{selectedDeposit.user?.phone}</span>
+                  </div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-gray-500">Requested Amount</span>
+                    <span className="font-bold text-red-600">₹{selectedDeposit.amount}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">UTR</span>
+                    <span className="font-mono font-bold tracking-tight text-xs">{selectedDeposit.utr}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Actual Amount Received (₹)</label>
+                  <input
+                    type="number"
+                    required
+                    value={actualAmount}
+                    onChange={(e) => setActualAmount(e.target.value)}
+                    className="block w-full px-4 py-3 bg-white border border-gray-300 rounded-xl font-black text-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    Enter the exact amount you verified in your bank app. This amount will be credited to the user's wallet.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setIsApproving(false); setSelectedDeposit(null); }}
+                  className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={processingId !== null}
+                  className="flex-1 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-all disabled:opacity-70 flex items-center justify-center shadow-md uppercase tracking-wider"
+                >
+                  {processingId ? '...' : 'CONFIRM & CREDIT'}
                 </button>
               </div>
             </form>

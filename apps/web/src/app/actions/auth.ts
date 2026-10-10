@@ -380,3 +380,32 @@ export async function getUserAction() {
   const user = await getServerSession();
   return { success: true, user };
 }
+
+export async function savePaymentDetailsAction(data: {
+  upiId?: string;
+  bankAccountName?: string;
+  bankAccountNumber?: string;
+  bankIfsc?: string;
+  bankName?: string;
+}) {
+  const user = await getServerSession();
+  if (!user) return { success: false, message: 'Unauthorized' };
+
+  try {
+    await db.update(users)
+      .set({
+        upiId: data.upiId || null,
+        bankAccountName: data.bankAccountName || null,
+        bankAccountNumber: data.bankAccountNumber || null,
+        bankIfsc: data.bankIfsc || null,
+        bankName: data.bankName || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, user.id));
+
+    return { success: true, message: 'Payment details saved successfully' };
+  } catch (error) {
+    console.error('Error in savePaymentDetailsAction:', error);
+    return { success: false, message: 'Failed to save payment details' };
+  }
+}

@@ -38,6 +38,12 @@ export async function getUsersWithWallets() {
     id: users.id,
     phone: users.phone,
     createdAt: users.createdAt,
+    welcomeBonusStatus: users.welcomeBonusStatus,
+    upiId: users.upiId,
+    bankAccountName: users.bankAccountName,
+    bankAccountNumber: users.bankAccountNumber,
+    bankIfsc: users.bankIfsc,
+    bankName: users.bankName,
     // Note: To get balance, we'd need to aggregate ledgerEntries, 
     // but for the admin table we'll return 0 and fetch it live if needed
   })
@@ -47,12 +53,25 @@ export async function getUsersWithWallets() {
   return allUsers.map(u => ({ ...u, balance: 0 }));
 }
 
-export async function creditUserBonus(userId: string, amount: number) {
+export async function confirmWelcomeBonusPayment(
+  userId: string, 
+  actualAmount: number,
+  paymentMethod: string,
+  utr: string,
+  note?: string
+) {
   const authCookie = cookies().get('admin_auth');
   if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
 
   try {
     await db.transaction(async (tx: any) => {
+      // Verify not already paid
+      const userRec = await tx.query.users.findFirst({
+        where: eq(users.id, userId)
+      });
+      if (!userRec) throw new Error('User not found');
+      if (userRec.welcomeBonusStatus === 'PAID') throw new Error('Bonus already paid');
+
       // 1. Get user wallet
       const wallet = await tx.query.wallets.findFirst({
         where: eq(wallets.userId, userId)
@@ -73,8 +92,9 @@ export async function creditUserBonus(userId: string, amount: number) {
         .values({
           userId,
           type: 'WELCOME_BONUS',
-          amountMinor: amount,
+          amountMinor: actualAmount,
           status: 'COMPLETED',
+          externalReference: utr,
         })
         .returning();
 
@@ -85,17 +105,22 @@ export async function creditUserBonus(userId: string, amount: number) {
           transactionId: txn.id,
           entryType: 'CREDIT',
           balanceType: 'BONUS',
-          amountMinor: amount,
+          amountMinor: actualAmount,
           referenceType: 'TRANSACTION',
           referenceId: txn.id,
-          description: 'Admin Manual Bonus'
+          description: `Admin Manual Bonus - ${paymentMethod} (${utr}) ${note ? '- '+note : ''}`
         });
+
+      // 4. Mark user as paid
+      await tx.update(users)
+        .set({ welcomeBonusStatus: 'PAID', updatedAt: new Date() })
+        .where(eq(users.id, userId));
     });
     
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to credit bonus:', error);
-    return { success: false, error: 'Failed to credit bonus.' };
+    return { success: false, error: error.message || 'Failed to credit bonus.' };
   }
 }
 
@@ -121,7 +146,7 @@ export async function getPendingDeposits() {
   return pendingDeposits;
 }
 
-export async function approveDeposit(depositId: string, adminUserId?: string) {
+export async function approveDeposit(depositId: string, actualAmount: number, adminUserId?: string) {
   const authCookie = cookies().get('admin_auth');
   if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
 
@@ -133,10 +158,12 @@ export async function approveDeposit(depositId: string, adminUserId?: string) {
       });
       if (!deposit || deposit.status !== 'PENDING') throw new Error('Invalid deposit request.');
 
-      // 2. Mark as completed
+      // 2. Mark as completed and record actual amount
       await tx.update(deposits)
         .set({ 
           status: 'COMPLETED', 
+          actualAmountMinor: actualAmount,
+          verifiedAt: new Date(),
           processedAt: new Date() 
         })
         .where(eq(deposits.id, depositId));
@@ -155,7 +182,7 @@ export async function approveDeposit(depositId: string, adminUserId?: string) {
       const [txn] = await tx.insert(transactions).values({
         userId: deposit.userId,
         type: 'DEPOSIT',
-        amountMinor: deposit.amountMinor,
+        amountMinor: actualAmount,
         status: 'COMPLETED',
         externalReference: deposit.utr
       }).returning();
@@ -165,7 +192,7 @@ export async function approveDeposit(depositId: string, adminUserId?: string) {
         transactionId: txn.id,
         entryType: 'CREDIT',
         balanceType: 'CASH',
-        amountMinor: deposit.amountMinor,
+        amountMinor: actualAmount,
         referenceType: 'DEPOSIT',
         referenceId: deposit.id,
         description: `Deposit via UTR: ${deposit.utr}`

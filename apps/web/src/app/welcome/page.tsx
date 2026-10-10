@@ -28,7 +28,7 @@ export default function WelcomePage() {
     const res = await claimWelcomeBonus();
     setClaiming(false);
     if (res.success || isBonusClaimed) {
-      router.push('/after-bonus');
+      router.push('/payment-setup');
     }
   };
 

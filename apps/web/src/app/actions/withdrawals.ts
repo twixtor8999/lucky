@@ -15,6 +15,11 @@ export async function getPendingWithdrawals() {
     user: {
       id: users.id,
       phone: users.phone,
+      upiId: users.upiId,
+      bankAccountName: users.bankAccountName,
+      bankAccountNumber: users.bankAccountNumber,
+      bankIfsc: users.bankIfsc,
+      bankName: users.bankName,
     }
   })
   .from(withdrawals)
@@ -25,7 +30,13 @@ export async function getPendingWithdrawals() {
   return pendingWithdrawals;
 }
 
-export async function approveWithdrawal(withdrawalId: string, utrReference: string) {
+export async function approveWithdrawal(
+  withdrawalId: string, 
+  actualAmount: number,
+  paymentMethod: string,
+  paymentReference: string,
+  paymentNote?: string
+) {
   const authCookie = cookies().get('admin_auth');
   if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
 
@@ -41,23 +52,25 @@ export async function approveWithdrawal(withdrawalId: string, utrReference: stri
       await tx.update(withdrawals)
         .set({ 
           status: 'COMPLETED', 
-          providerReference: utrReference,
+          actualAmountMinor: actualAmount,
+          paymentMethod,
+          paymentReference,
+          paymentNote,
+          providerReference: paymentReference,
+          verifiedAt: new Date(),
           processedAt: new Date() 
         })
         .where(eq(withdrawals.id, withdrawalId));
 
       // Note: We assume the user's wallet was already DEBITED when they made the request.
-      // If we are not debiting upon request, we would debit it here.
-      // In a strict financial system, making a withdrawal request moves funds to a "LOCKED" state or debits it.
-      // Since we don't have the user side built yet, we will assume it was debited upon request.
       
       // We log the transaction as completed.
       await tx.insert(transactions).values({
         userId: request.userId,
         type: 'WITHDRAWAL',
-        amountMinor: request.amountMinor,
+        amountMinor: actualAmount,
         status: 'COMPLETED',
-        reference: utrReference
+        externalReference: paymentReference
       });
     });
     return { success: true };
