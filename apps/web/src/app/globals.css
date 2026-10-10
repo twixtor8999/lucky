@@ -106,3 +106,14 @@
   );
   animation: shimmer 2.5s infinite;
 }
+
+@keyframes floatComplex {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(6px, -10px); }
+  50% { transform: translate(0, -16px); }
+  75% { transform: translate(-6px, -10px); }
+}
+
+.animate-float-complex {
+  animation: floatComplex 6s ease-in-out infinite;
+}

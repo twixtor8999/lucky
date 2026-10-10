@@ -177,7 +177,7 @@ export default async function HomePage() {
             <img
               src="/hero-woman.png"
               alt="Lucky 777 Woman"
-              className="w-[220px] sm:w-[280px] md:w-[300px] object-contain drop-shadow-xl translate-y-6 md:translate-y-12"
+              className="w-[220px] sm:w-[280px] md:w-[300px] object-contain drop-shadow-xl translate-y-6 md:translate-y-12 animate-float-complex"
             />
           </div>
         </div>
