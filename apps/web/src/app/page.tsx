@@ -3,6 +3,7 @@ import { getLiveHomepageData } from './actions/homepage';
 import Link from 'next/link';
 import { Download, HelpCircle, Phone, MessageCircle, ChevronDown } from 'lucide-react';
 import StickyDownloadBar from '@/components/StickyDownloadBar';
+import HeroBadges from '@/components/HeroBadges';
 
 export default async function HomePage() {
   const { mainGames: games, starlineGames, jackpotGames } = await getLiveHomepageData();
@@ -167,11 +168,8 @@ export default async function HomePage() {
               Welcome Bonus
             </h3>
 
-            {/* Bottom Badge (Min Deposit) */}
-            <div className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-white rounded-full text-xs font-bold text-gray-800 shadow-md">
-              <span className="text-base">💰</span>
-              <span>Min Deposit <span className="text-[#e42e2a]">₹100</span></span>
-            </div>
+            {/* Animated Badges */}
+            <HeroBadges />
           </div>
 
           {/* Right Image — smaller, contained, no overflow */}
@@ -188,24 +186,18 @@ export default async function HomePage() {
 
       {/* Download APK Pill — sits BELOW the hero, overlapping the border */}
       <div className="relative z-30 flex justify-center w-full px-4 -mt-8">
-        <Link href="/download" className="w-full max-w-lg group cursor-pointer block relative transition-all duration-300 hover:scale-105">
+        <Link href="/download" className="w-full max-w-5xl group cursor-pointer block relative transition-all duration-300 hover:scale-[1.01]">
           <div
-            className="w-full h-14 md:h-[68px] rounded-full shadow-[0_10px_30px_rgba(228,46,42,0.45)] group-hover:shadow-[0_20px_50px_rgba(228,46,42,0.65)] flex items-center justify-center overflow-hidden relative border-[3px] border-white/30 transition-all duration-300"
-            style={{ background: 'linear-gradient(90deg, #c41e1a 0%, #e42e2a 40%, #ff5252 70%, #e42e2a 100%)' }}
+            className="w-full h-12 md:h-[56px] rounded-[30px] shadow-sm flex items-center justify-center overflow-hidden relative"
+            style={{ backgroundColor: '#e23333' }}
           >
-            {/* Animated shimmer on hover */}
-            <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12 pointer-events-none" />
-
-            {/* Pulse ring */}
-            <div className="absolute inset-0 rounded-full animate-ping opacity-20 bg-red-500 group-hover:hidden" />
-
-            <div className="flex items-center gap-3 text-white font-black text-[18px] md:text-[20px] tracking-wide relative z-10">
+            <div className="flex items-center gap-2 text-white font-bold text-[16px] md:text-[18px]">
               {/* Android Icon */}
-              <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 md:w-7 md:h-7 group-hover:-translate-y-0.5 group-hover:scale-110 transition-transform duration-300">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 md:w-6 md:h-6">
                 <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.81.24l-1.89 3.26C15.03 8.44 13.57 8.1 12 8.1c-1.57 0-3.03.34-4.48.85L5.63 5.69c-.16-.3-.52-.39-.81-.24-.29.16-.42.54-.26.85l1.84 3.18C3.52 11.23 1.6 14.36 1.13 18H22.87c-.47-3.64-2.39-6.77-5.27-8.52zM7 15.25c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25zm10 0c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25z" />
               </svg>
-              <span className="group-hover:tracking-widest transition-all duration-300">Download APK</span>
-              <Download className="w-5 h-5 opacity-90 group-hover:translate-y-1 transition-transform duration-300" />
+              <span>Download APK</span>
+              <Download className="w-4 h-4 md:w-5 md:h-5 ml-1" />
             </div>
           </div>
         </Link>
