@@ -1,60 +1,14 @@
-'use client';
-
 import React from 'react';
 import Link from 'next/link';
+import { getChartData } from '../../../actions/charts';
 
-// Deterministic mock data generator for the last 12 weeks
-const generateMockData = (type: 'jodi' | 'pana') => {
-  const weeks = [];
-  // Generating 12 weeks of data
-  for (let w = 0; w < 12; w++) {
-    const days = [];
-    for (let d = 0; d < 7; d++) {
-      // Deterministic "randomness" based on week and day index
-      const seed = w * 7 + d;
-      // Randomly decide if market is closed
-      if (seed % 5 === 0 && d !== 0) { // arbitrary pseudo-random rule
-        days.push(null);
-      } else {
-        if (type === 'pana') {
-          // Format: Top 3 digits, Middle 2 digits, Bottom 3 digits
-          days.push({
-            top: (100 + (seed * 13) % 899).toString(),
-            mid: (10 + (seed * 7) % 89).toString(),
-            bot: (100 + (seed * 17) % 899).toString(),
-            highlight: seed % 4 === 0
-          });
-        } else {
-          // Jodi is just the 2 middle digits
-          days.push({
-            mid: (10 + (seed * 7) % 89).toString(),
-            highlight: seed % 4 === 0
-          });
-        }
-      }
-    }
-    
-    // Generate date range string for the week
-    const date = new Date('2024-01-01'); // Fixed start date to prevent hydration mismatches
-    date.setDate(date.getDate() - (12 - w) * 7);
-    const startStr = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-    date.setDate(date.getDate() + 6);
-    const endStr = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-    
-    weeks.push({
-      dateRange: `${startStr}\nto\n${endStr}`,
-      days
-    });
-  }
-  return weeks.reverse();
-};
-
-export default function ChartPage({ params }: { params: { type: string, game: string } }) {
+export default async function ChartPage({ params }: { params: { type: string, game: string } }) {
   const isPana = params.type === 'pana';
   const gameName = params.game.replace(/-/g, ' ').toUpperCase();
   const title = `${gameName} ${isPana ? 'Pana' : 'Jodi'} Chart - ${gameName} ${isPana ? 'Panel' : 'Jodi'} Chart Records`;
   
-  const chartData = React.useMemo(() => generateMockData(isPana ? 'pana' : 'jodi'), [isPana]);
+  // Fetch live chart data from the database
+  const chartData = await getChartData(params.game, isPana ? 'pana' : 'jodi');
 
   return (
     <div className="w-full min-h-screen bg-white font-sans flex flex-col">
@@ -74,9 +28,9 @@ export default function ChartPage({ params }: { params: { type: string, game: st
       {/* Breadcrumbs / Actions */}
       <div className="w-full max-w-4xl mx-auto px-2 py-4 flex justify-between items-center text-xs font-bold text-gray-500">
         <Link href="/" className="hover:text-red-600 transition-colors">← Back to Home</Link>
-        <button className="bg-red-50 text-red-600 border border-red-200 px-4 py-1.5 rounded-full hover:bg-red-100 transition-colors">
+        <Link href={`/chart/${params.type}/${params.game}`} className="bg-red-50 text-red-600 border border-red-200 px-4 py-1.5 rounded-full hover:bg-red-100 transition-colors">
           Refresh Chart
-        </button>
+        </Link>
       </div>
 
       {/* The Chart Table */}
@@ -104,7 +58,7 @@ export default function ChartPage({ params }: { params: { type: string, game: st
                 </td>
 
                 {/* Days Cells */}
-                {week.days.map((day, dIdx) => (
+                {week.days.map((day: any, dIdx: number) => (
                   <td key={dIdx} className="border-r border-gray-300 p-1 md:p-2 align-middle">
                     {!day ? (
                       <div className="text-gray-300 font-black text-lg">***</div>
@@ -117,25 +71,23 @@ export default function ChartPage({ params }: { params: { type: string, game: st
                             <span className="text-[10px] md:text-[11px] font-bold tracking-widest">{day.bot}</span>
                           </>
                         ) : (
-                          <span className="text-[16px] md:text-[20px] font-black">{day.mid}</span>
+                          <span className="text-[20px] md:text-[24px] font-black">{day.mid}</span>
                         )}
                       </div>
                     )}
                   </td>
                 ))}
-
               </tr>
             ))}
           </tbody>
         </table>
         
-        <div className="flex justify-center mt-6">
-          <button className="bg-red-50 text-red-600 border border-red-200 px-6 py-2 rounded-full font-bold text-sm shadow-sm hover:bg-red-100 transition-colors">
-            Load Older Records
-          </button>
-        </div>
+        {chartData.length === 0 && (
+          <div className="text-center py-10 text-gray-500 font-bold border border-t-0 border-gray-300 bg-gray-50">
+            No chart data available for this market yet.
+          </div>
+        )}
       </div>
-
     </div>
   );
 }

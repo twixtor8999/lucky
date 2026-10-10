@@ -15,6 +15,13 @@
       "when": 1791631799693,
       "tag": "0001_harsh_nightshade",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791643516780,
+      "tag": "0002_chemical_justice",
+      "breakpoints": true
     }
   ]
 }

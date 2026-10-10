@@ -86,7 +86,7 @@ export default function DownloadPage() {
             </div>
             <div className="flex items-center gap-3 text-sm font-medium text-gray-600">
               <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs font-bold shrink-0">2</div>
-              <p>Go to Settings > Security</p>
+              <p>Go to Settings &gt; Security</p>
             </div>
             <div className="flex items-center gap-3 text-sm font-medium text-gray-600">
               <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs font-bold shrink-0">3</div>

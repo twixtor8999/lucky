@@ -1,55 +1,15 @@
-'use client';
-
 import React from 'react';
+import { getLiveHomepageData } from './actions/homepage';
+import { FaqSection } from './FaqSection';
 import Link from 'next/link';
 import { Download, PlayCircle, Trophy, Star, ShieldCheck, ChevronRight, HelpCircle, Phone, Clock, BadgeCheck, MessageCircle, ChevronDown } from 'lucide-react';
-import { audioHaptics } from '@/lib/audio-haptics';
 
-export default function HomePage() {
-  const [openFaqIndex, setOpenFaqIndex] = React.useState<number | null>(null);
 
-  const toggleFaq = (index: number) => {
-    setOpenFaqIndex(openFaqIndex === index ? null : index);
-    audioHaptics.playTap();
-  };
+export default async function HomePage() {
+  const { mainGames: games, starlineGames, jackpotGames } = await getLiveHomepageData();
 
-  const games = [
-    { id: '1', name: 'SHREE GANESH', result: '469-93-256' },
-    { id: '2', name: 'OMKAR MORNING', result: '245-11-678' },
-    { id: '3', name: 'GOA MORNING', result: '138-20-136' },
-    { id: '4', name: 'SRIDEVI', result: '778-25-889' },
-    { id: '5', name: 'TIME BAZAR', result: '177-57-179' },
-    { id: '6', name: 'MADHUR DAY', result: '270-95-168' },
-    { id: '7', name: 'GOA DAY', result: '168-56-767' },
-    { id: '8', name: 'MILAN DAY', result: '338-38-668' },
-    { id: '9', name: 'RAJDHANI DAY', result: '128-10-668' },
-  ];
-
-  const starlineGames = [
-    { id: '1', name: '10:30 AM', result: '679-2' },
-    { id: '2', name: '11:30 AM', result: '466-6' },
-    { id: '3', name: '12:30 PM', result: '119-1' },
-    { id: '4', name: '01:30 PM', result: '167-4' },
-    { id: '5', name: '02:30 PM', result: '234-9' },
-    { id: '6', name: '03:30 PM', result: '270-9' },
-    { id: '7', name: '04:30 PM', result: '568-9' },
-    { id: '8', name: '05:30 PM', result: '356-4' },
-    { id: '9', name: '06:30 PM', result: '158-4' },
-  ];
-
-  const jackpotGames = [
-    { id: '1', name: '10:00 AM', result: '222' },
-    { id: '2', name: '11:00 AM', result: '555' },
-    { id: '3', name: '12:00 PM', result: '888' },
-    { id: '4', name: '01:00 PM', result: '444' },
-    { id: '5', name: '02:00 PM', result: '111' },
-    { id: '6', name: '03:00 PM', result: '111' },
-    { id: '7', name: '04:00 PM', result: '777' },
-    { id: '8', name: '05:00 PM', result: '222' },
-    { id: '9', name: '06:00 PM', result: '777' },
-    { id: '10', name: '07:00 PM', result: '***', isSpecial: true },
-  ];
-
+  
+  
   const faqs = [
     { q: "What is Lucky777 and what does it provide for satta matka players?", a: "Lucky777 is a premium platform dedicated to providing the fastest and most accurate satta matka results, charts, and guessing forums for players across India." },
     { q: "How does Lucky777 verify the satta matka result before posting it?", a: "We have a dedicated team that verifies results directly from the core markets. Multiple independent sources are cross-checked before any result is published to ensure 100% accuracy." },
@@ -77,36 +37,95 @@ export default function HomePage() {
           </div>
           
           {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-6 text-[13px] font-medium text-gray-300">
-            <Link href="/" className="flex flex-col items-center text-[#ff4b4b] transition-colors relative">
+          <nav className="hidden lg:flex items-center gap-6 text-[13px] font-medium text-gray-300 h-full">
+            <Link href="/" className="flex flex-col items-center justify-center text-[#ff4b4b] transition-colors relative h-full">
               <span>Home</span>
-              <span className="w-1 h-1 rounded-full bg-[#ff4b4b] absolute -bottom-2"></span>
+              <span className="w-1 h-1 rounded-full bg-[#ff4b4b] absolute bottom-4"></span>
             </Link>
             
-            <div className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors">
-              <span>Charts</span> <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+            <div className="relative group h-full flex items-center">
+              <div className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors">
+                <span>Jodi Charts</span> <ChevronDown className="w-3.5 h-3.5 opacity-70 group-hover:rotate-180 transition-transform duration-200" />
+              </div>
+              <div className="absolute top-[64px] -left-4 bg-[#111] border border-gray-800 rounded-b-xl shadow-2xl w-48 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 flex flex-col max-h-[70vh] overflow-y-auto no-scrollbar">
+                {[
+                  "SHREE GANESH", "OMKAR MORNING", "GOA MORNING", "SRIDEVI", 
+                  "TIME BAZAR", "MADHUR DAY", "GOA DAY", "MILAN DAY", 
+                  "RAJDHANI DAY", "OMKAR DAY", "KALYAN", "SRIDEVI NIGHT", 
+                  "MADHUR NIGHT", "GOA NIGHT", "MILAN NIGHT", "OMKAR NIGHT", 
+                  "RAJDHANI NIGHT", "KALYAN NIGHT", "MAIN BAZAR"
+                ].map((item, idx) => (
+                  <Link key={idx} href={`/chart/jodi/${item.toLowerCase().replace(/ /g, '-')}`} className="px-4 py-2.5 hover:bg-gray-800 text-gray-400 hover:text-white text-xs uppercase whitespace-nowrap transition-colors">
+                    {item}
+                  </Link>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors">
-              <span>Jodi Charts</span> <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+
+            <div className="relative group h-full flex items-center">
+              <div className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors">
+                <span>Pana Charts</span> <ChevronDown className="w-3.5 h-3.5 opacity-70 group-hover:rotate-180 transition-transform duration-200" />
+              </div>
+              <div className="absolute top-[64px] -left-4 bg-[#111] border border-gray-800 rounded-b-xl shadow-2xl w-48 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 flex flex-col max-h-[70vh] overflow-y-auto no-scrollbar">
+                {[
+                  "SHREE GANESH", "OMKAR MORNING", "GOA MORNING", "SRIDEVI", 
+                  "TIME BAZAR", "MADHUR DAY", "GOA DAY", "MILAN DAY", 
+                  "RAJDHANI DAY", "OMKAR DAY", "KALYAN", "SRIDEVI NIGHT", 
+                  "MADHUR NIGHT", "GOA NIGHT", "MILAN NIGHT", "OMKAR NIGHT", 
+                  "RAJDHANI NIGHT", "KALYAN NIGHT", "MAIN BAZAR"
+                ].map((item, idx) => (
+                  <Link key={idx} href={`/chart/pana/${item.toLowerCase().replace(/ /g, '-')}`} className="px-4 py-2.5 hover:bg-gray-800 text-gray-400 hover:text-white text-xs uppercase whitespace-nowrap transition-colors">
+                    {item}
+                  </Link>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors">
-              <span>Pana Charts</span> <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+
+            <div className="relative group h-full flex items-center">
+              <div className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors">
+                <span>Starline Charts</span> <ChevronDown className="w-3.5 h-3.5 opacity-70 group-hover:rotate-180 transition-transform duration-200" />
+              </div>
+              <div className="absolute top-[64px] -left-4 bg-[#111] border border-gray-800 rounded-b-xl shadow-2xl w-56 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 flex flex-col max-h-[70vh] overflow-y-auto no-scrollbar">
+                <Link href="/chart/starline/all" className="px-4 py-2.5 hover:bg-gray-800 text-[#ff4b4b] font-bold hover:text-[#ff6b6b] text-xs uppercase whitespace-nowrap transition-colors border-b border-gray-800 mb-1">
+                  All Starline Pana Charts
+                </Link>
+                {[
+                  "10:30 AM", "11:30 AM", "12:30 PM", "01:30 PM", 
+                  "02:30 PM", "03:30 PM", "04:30 PM", "05:30 PM", 
+                  "06:30 PM", "07:30 PM"
+                ].map((item, idx) => (
+                  <Link key={idx} href={`/chart/starline/${item.replace(/[: ]/g, '').toLowerCase()}`} className="px-4 py-2.5 hover:bg-gray-800 text-gray-400 hover:text-white text-xs uppercase whitespace-nowrap transition-colors">
+                    {item}
+                  </Link>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors">
-              <span>Starline Charts</span> <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+
+            <div className="relative group h-full flex items-center">
+              <div className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors">
+                <span>Jackpot Charts</span> <ChevronDown className="w-3.5 h-3.5 opacity-70 group-hover:rotate-180 transition-transform duration-200" />
+              </div>
+              <div className="absolute top-[64px] -left-4 bg-[#111] border border-gray-800 rounded-b-xl shadow-2xl w-56 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 flex flex-col max-h-[70vh] overflow-y-auto no-scrollbar">
+                <Link href="/chart/jackpot/all" className="px-4 py-2.5 hover:bg-gray-800 text-[#ff4b4b] font-bold hover:text-[#ff6b6b] text-xs uppercase whitespace-nowrap transition-colors border-b border-gray-800 mb-1">
+                  All Jackpot Jodi Charts
+                </Link>
+                {[
+                  "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", 
+                  "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM", 
+                  "06:00 PM", "07:00 PM"
+                ].map((item, idx) => (
+                  <Link key={idx} href={`/chart/jackpot/${item.replace(/[: ]/g, '').toLowerCase()}`} className="px-4 py-2.5 hover:bg-gray-800 text-gray-400 hover:text-white text-xs uppercase whitespace-nowrap transition-colors">
+                    {item}
+                  </Link>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors">
-              <span>Jackpot Charts</span> <ChevronDown className="w-3.5 h-3.5 opacity-70" />
-            </div>
-            <div className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors">
-              <span>More</span> <ChevronDown className="w-3.5 h-3.5 opacity-70" />
-            </div>
+
           </nav>
 
           {/* Download Button */}
           <Link 
             href="/download"
-            onClick={() => audioHaptics.playTap()}
             className="px-6 py-2 rounded-full text-sm font-medium text-white bg-[#ff4b4b] hover:bg-red-500 transition-colors shadow-[0_0_15px_rgba(255,75,75,0.4)]"
           >
             Download Now
@@ -170,25 +189,29 @@ export default function HomePage() {
 
           {/* Right Image Content */}
           <div className="flex-1 mt-10 md:mt-0 flex justify-center md:justify-end relative z-10 w-full pointer-events-none md:pr-10">
-             <img src="/hero-woman.png" alt="Lucky 777 Woman" className="w-[320px] sm:w-[450px] object-contain drop-shadow-2xl translate-y-6" onError={(e) => e.currentTarget.style.display = 'none'} />
+             <img src="/hero-woman.png" alt="Lucky 777 Woman" className="w-[320px] sm:w-[450px] object-contain drop-shadow-2xl translate-y-6" />
           </div>
         </div>
 
-        {/* 3. Floating Download APK Bar (Full Edge CTA) */}
-        <div className="absolute bottom-0 left-0 right-0 translate-y-1/2 z-30 flex justify-end w-full pl-4 md:pl-8">
-          <Link href="/download" onClick={() => audioHaptics.playTap()} className="w-full max-w-7xl group cursor-pointer block relative ml-auto">
-            <div className="w-full h-14 md:h-[72px] rounded-l-full rounded-r-none shadow-[0_10px_30px_rgba(228,46,42,0.3)] flex items-center justify-center overflow-hidden relative border-y-[3px] border-l-[3px] border-white/20"
+        {/* 3. Floating Download APK Bar (Centered Pill) */}
+        <div className="absolute bottom-0 left-0 right-0 translate-y-1/2 z-30 flex justify-center w-full px-4">
+          <Link href="/download" className="w-full max-w-lg group cursor-pointer block relative transition-all duration-300 hover:scale-105 animate-[pulse_3s_ease-in-out_infinite] hover:animate-none">
+            <div className="w-full h-14 md:h-[72px] rounded-full shadow-[0_10px_30px_rgba(228,46,42,0.4)] group-hover:shadow-[0_15px_40px_rgba(228,46,42,0.6)] flex items-center justify-center overflow-hidden relative border-[3px] border-white/20 transition-all duration-300"
                  style={{
-                   background: 'linear-gradient(90deg, #e42e2a 0%, #e42e2a 60%, #ed5858 100%)'
+                   background: 'linear-gradient(90deg, #e42e2a 0%, #ff4b4b 50%, #e42e2a 100%)',
+                   backgroundSize: '200% auto',
                  }}>
               
               {/* Animated Sheen Effect */}
-              <div className="absolute inset-0 translate-x-[-100%] group-hover:animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12"></div>
+              <div className="absolute inset-0 translate-x-[-100%] group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12"></div>
               
-              <div className="flex items-center gap-2 text-white font-bold text-[18px] md:text-[20px] tracking-wide relative z-10 pr-4 md:pr-8">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 mb-0.5"><path d="M17.523 15.3414C17.523 15.3414 17.523 15.3414 17.523 15.3414ZM17.4877 15.3768C17.4877 15.3768 17.4877 15.3768 17.4877 15.3768ZM17.6534 14.5366C17.6534 14.5366 17.6534 14.5366 17.6534 14.5366ZM17.8427 15.1114C17.8427 15.1114 17.8427 15.1114 17.8427 15.1114ZM17.4269 15.5398C17.4269 15.5398 17.4269 15.5398 17.4269 15.5398ZM17.5348 15.4241C17.5348 15.4241 17.5348 15.4241 17.5348 15.4241ZM17.1517 15.6565C17.1517 15.6565 17.1517 15.6565 17.1517 15.6565ZM6.50579 15.3768C6.50579 15.3768 6.50579 15.3768 6.50579 15.3768ZM6.84252 15.6565C6.84252 15.6565 6.84252 15.6565 6.84252 15.6565ZM6.16016 15.1114C6.16016 15.1114 6.16016 15.1114 6.16016 15.1114ZM6.34005 14.5366C6.34005 14.5366 6.34005 14.5366 6.34005 14.5366ZM6.47146 15.3414C6.47146 15.3414 6.47146 15.3414 6.47146 15.3414ZM6.55938 15.5398C6.55938 15.5398 6.55938 15.5398 6.55938 15.5398ZM6.46011 15.4241C6.46011 15.4241 6.46011 15.4241 6.46011 15.4241ZM12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM17.1145 13.929C16.8973 13.929 16.7197 13.7513 16.7197 13.5342V12.1158C16.7197 11.8987 16.8973 11.721 17.1145 11.721C17.3316 11.721 17.5093 11.8987 17.5093 12.1158V13.5342C17.5093 13.7513 17.3316 13.929 17.1145 13.929ZM6.88417 13.929C6.66703 13.929 6.48937 13.7513 6.48937 13.5342V12.1158C6.48937 11.8987 6.66703 11.721 6.88417 11.721C7.10132 11.721 7.27898 11.8987 7.27898 12.1158V13.5342C7.27898 13.7513 7.10132 13.929 6.88417 13.929ZM14.9398 9.5085C14.739 9.30771 14.739 8.98155 14.9398 8.78076C15.1406 8.57996 15.4667 8.57996 15.6675 8.78076L16.4828 9.5961C16.6836 9.79689 16.6836 10.1231 16.4828 10.3238C16.282 10.5246 15.9559 10.5246 15.7551 10.3238L14.9398 9.5085ZM8.24492 10.3238C8.04412 10.5246 7.71796 10.5246 7.51717 10.3238C7.31638 10.1231 7.31638 9.79689 7.51717 9.5961L8.33251 8.78076C8.5333 8.57996 8.85946 8.57996 9.06025 8.78076C9.26105 8.98155 9.26105 9.30771 9.06025 9.5085L8.24492 10.3238ZM17.1517 15.6565C16.9404 15.8677 16.634 16 16.3276 16H7.67236C7.36592 16 7.05953 15.8677 6.84824 15.6565C6.63695 15.4452 6.5 15.1388 6.5 14.8324V9.67026C6.5 8.77587 7.22513 8.05073 8.11953 8.05073H15.8805C16.7749 8.05073 17.5 8.77587 17.5 9.67026V14.8324C17.5 15.1388 17.363 15.4452 17.1517 15.6565Z"/></svg>
+              <div className="flex items-center gap-2.5 text-white font-bold text-[18px] md:text-[20px] tracking-wide relative z-10">
+                {/* Android Icon */}
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 md:w-7 md:h-7 mb-0.5 group-hover:-translate-y-1 transition-transform duration-300">
+                  <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.81.24l-1.89 3.26C15.03 8.44 13.57 8.1 12 8.1c-1.57 0-3.03.34-4.48.85L5.63 5.69c-.16-.3-.52-.39-.81-.24-.29.16-.42.54-.26.85l1.84 3.18C3.52 11.23 1.6 14.36 1.13 18H22.87c-.47-3.64-2.39-6.77-5.27-8.52zM7 15.25c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25zm10 0c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25z"/>
+                </svg>
                 Download APK
-                <Download className="w-5 h-5 ml-1 opacity-90" />
+                <Download className="w-5 h-5 ml-1 opacity-90 group-hover:translate-y-1 transition-transform duration-300" />
               </div>
             </div>
           </Link>
@@ -535,22 +558,19 @@ export default function HomePage() {
         </h2>
         <div className="space-y-3">
           {faqs.map((faq, i) => (
-            <React.Fragment key={i}>
-              <div 
-                onClick={() => toggleFaq(i)}
-                className="bg-white border border-gray-200 p-4 md:p-5 rounded-xl flex flex-col cursor-pointer hover:border-gray-300 transition-colors shadow-sm"
-              >
-                <div className="flex justify-between items-center">
-                  <span className="text-[15px] md:text-[17px] font-medium text-[#111]">{faq.q}</span>
-                  <span className="text-xl font-light text-[#111]">{openFaqIndex === i ? '-' : '+'}</span>
-                </div>
-                {openFaqIndex === i && (
-                  <div className="pt-4 mt-4 border-t border-gray-100 text-gray-600 text-[14px] md:text-[15px] leading-relaxed">
-                    {faq.a}
-                  </div>
-                )}
+            <details 
+              key={i}
+              className="bg-white border border-gray-200 p-4 md:p-5 rounded-xl group cursor-pointer hover:border-gray-300 transition-colors shadow-sm"
+            >
+              <summary className="flex justify-between items-center text-[15px] md:text-[17px] font-medium text-[#111] list-none marker:hidden">
+                {faq.q}
+                <span className="text-xl font-light text-[#111] group-open:hidden">+</span>
+                <span className="text-xl font-light text-[#111] hidden group-open:block">-</span>
+              </summary>
+              <div className="pt-4 mt-4 border-t border-gray-100 text-gray-600 text-[14px] md:text-[15px] leading-relaxed">
+                {faq.a}
               </div>
-            </React.Fragment>
+            </details>
           ))}
         </div>
       </section>

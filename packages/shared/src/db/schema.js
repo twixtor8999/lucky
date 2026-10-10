@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.marketsRelations = exports.walletsRelations = exports.usersRelations = exports.deposits = exports.systemSettings = exports.auditLogs = exports.supportMessages = exports.supportTickets = exports.notifications = exports.withdrawals = exports.bonusClaims = exports.bonusCampaigns = exports.transactions = exports.ledgerEntries = exports.wallets = exports.results = exports.bets = exports.marketSchedules = exports.markets = exports.sessions = exports.otpVerifications = exports.mpins = exports.users = exports.ticketPriorityEnum = exports.ticketStatusEnum = exports.transactionStatusEnum = exports.transactionTypeEnum = exports.ledgerEntryTypeEnum = exports.balanceTypeEnum = exports.betStatusEnum = exports.marketStatusEnum = exports.userStatusEnum = exports.roleEnum = void 0;
+exports.appSettings = exports.marketsRelations = exports.walletsRelations = exports.usersRelations = exports.deposits = exports.systemSettings = exports.auditLogs = exports.supportMessages = exports.supportTickets = exports.notifications = exports.withdrawals = exports.bonusClaims = exports.bonusCampaigns = exports.transactions = exports.ledgerEntries = exports.wallets = exports.results = exports.bets = exports.marketSchedules = exports.markets = exports.sessions = exports.otpVerifications = exports.mpins = exports.users = exports.ticketPriorityEnum = exports.ticketStatusEnum = exports.transactionStatusEnum = exports.transactionTypeEnum = exports.ledgerEntryTypeEnum = exports.balanceTypeEnum = exports.betStatusEnum = exports.marketStatusEnum = exports.userStatusEnum = exports.roleEnum = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 const drizzle_orm_1 = require("drizzle-orm");
 // Enums
@@ -274,6 +274,7 @@ exports.systemSettings = (0, pg_core_1.pgTable)('system_settings', {
     id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
     ownerUpiId: (0, pg_core_1.varchar)('owner_upi_id', { length: 100 }).default('owner@upi').notNull(),
     ownerName: (0, pg_core_1.varchar)('owner_name', { length: 100 }).default('Lucky 777').notNull(),
+    supportWhatsapp: (0, pg_core_1.varchar)('support_whatsapp', { length: 20 }).default('+919380347013').notNull(),
     depositEnabled: (0, pg_core_1.boolean)('deposit_enabled').default(true).notNull(),
     withdrawalEnabled: (0, pg_core_1.boolean)('withdrawal_enabled').default(true).notNull(),
     minWithdrawalMinor: (0, pg_core_1.bigint)('min_withdrawal_minor', { mode: 'number' }).default(500).notNull(),
@@ -316,3 +317,15 @@ exports.marketsRelations = (0, drizzle_orm_1.relations)(exports.markets, ({ many
     bets: many(exports.bets),
     results: many(exports.results),
 }));
+// 13. App Settings Table (Admin configurable)
+exports.appSettings = (0, pg_core_1.pgTable)('app_settings', {
+    id: (0, pg_core_1.varchar)('id', { length: 50 }).primaryKey(), // 'global'
+    adminPassword: (0, pg_core_1.text)('admin_password').notNull().default('Admin@123'),
+    supportNumber: (0, pg_core_1.varchar)('support_number', { length: 20 }),
+    upiId: (0, pg_core_1.varchar)('upi_id', { length: 100 }),
+    upiQrCodeUrl: (0, pg_core_1.text)('upi_qr_code_url'),
+    welcomeBonusAmount: (0, pg_core_1.integer)('welcome_bonus_amount').default(100),
+    minDepositAmount: (0, pg_core_1.integer)('min_deposit_amount').default(500),
+    minWithdrawalAmount: (0, pg_core_1.integer)('min_withdrawal_amount').default(1000),
+    updatedAt: (0, pg_core_1.timestamp)('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});

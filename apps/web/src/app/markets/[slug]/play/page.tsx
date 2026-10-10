@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Link } from 'next/link';
+import Link from 'next/link';
 import { Play, Clock, ArrowLeft, Trash2, CheckCircle2, AlertCircle, Sparkles, X, ChevronRight } from 'lucide-react';
 import { useApp, BET_RULES } from '@/lib/store';
 import { BetTypeCode } from '@zenvora/shared';

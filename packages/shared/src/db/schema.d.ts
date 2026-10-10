@@ -1962,6 +1962,18 @@ export declare const systemSettings: import("drizzle-orm/pg-core").PgTableWithCo
             enumValues: [string, ...string[]];
             baseColumn: never;
         }, {}, {}>;
+        supportWhatsapp: import("drizzle-orm/pg-core").PgColumn<{
+            name: "support_whatsapp";
+            tableName: "system_settings";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
         depositEnabled: import("drizzle-orm/pg-core").PgColumn<{
             name: "deposit_enabled";
             tableName: "system_settings";
@@ -2171,4 +2183,119 @@ export declare const marketsRelations: import("drizzle-orm").Relations<"markets"
     schedules: import("drizzle-orm").Many<"market_schedules">;
     bets: import("drizzle-orm").Many<"bets">;
     results: import("drizzle-orm").Many<"results">;
+}>;
+export declare const appSettings: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "app_settings";
+    schema: undefined;
+    columns: {
+        id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "id";
+            tableName: "app_settings";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        adminPassword: import("drizzle-orm/pg-core").PgColumn<{
+            name: "admin_password";
+            tableName: "app_settings";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        supportNumber: import("drizzle-orm/pg-core").PgColumn<{
+            name: "support_number";
+            tableName: "app_settings";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        upiId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "upi_id";
+            tableName: "app_settings";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        upiQrCodeUrl: import("drizzle-orm/pg-core").PgColumn<{
+            name: "upi_qr_code_url";
+            tableName: "app_settings";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        welcomeBonusAmount: import("drizzle-orm/pg-core").PgColumn<{
+            name: "welcome_bonus_amount";
+            tableName: "app_settings";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: false;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        minDepositAmount: import("drizzle-orm/pg-core").PgColumn<{
+            name: "min_deposit_amount";
+            tableName: "app_settings";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: false;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        minWithdrawalAmount: import("drizzle-orm/pg-core").PgColumn<{
+            name: "min_withdrawal_amount";
+            tableName: "app_settings";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: false;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        updatedAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "updated_at";
+            tableName: "app_settings";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+    };
+    dialect: "pg";
 }>;

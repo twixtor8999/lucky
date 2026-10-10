@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ShieldCheck, ArrowRight, QrCode } from 'lucide-react';
 import { useApp } from '@/lib/store';
 import { audioHaptics } from '@/lib/audio-haptics';
-import { getSystemSettingsAction } from '../../actions/settings';
+import { getPublicSettings } from '../../actions/settings';
 
 export default function AddMoneyPage() {
   const router = useRouter();
@@ -19,10 +19,8 @@ export default function AddMoneyPage() {
   const activeAmount = customAmount ? parseInt(customAmount) || 0 : amount;
 
   useEffect(() => {
-    getSystemSettingsAction().then(res => {
-      if (res.success) {
-        setSettings(res.settings);
-      }
+    getPublicSettings().then(res => {
+      setSettings(res);
     });
   }, []);
 

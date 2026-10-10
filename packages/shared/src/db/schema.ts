@@ -366,3 +366,29 @@ export const marketsRelations = relations(markets, ({ many }) => ({
   bets: many(bets),
   results: many(results),
 }));
+
+export const resultsRelations = relations(results, ({ one }) => ({
+  market: one(markets, { fields: [results.marketId], references: [markets.id] }),
+}));
+
+export const marketSchedulesRelations = relations(marketSchedules, ({ one }) => ({
+  market: one(markets, { fields: [marketSchedules.marketId], references: [markets.id] }),
+}));
+
+export const betsRelations = relations(bets, ({ one }) => ({
+  market: one(markets, { fields: [bets.marketId], references: [markets.id] }),
+  user: one(users, { fields: [bets.userId], references: [users.id] }),
+}));
+
+// 13. App Settings Table (Admin configurable)
+export const appSettings = pgTable('app_settings', {
+  id: varchar('id', { length: 50 }).primaryKey(), // 'global'
+  adminPassword: text('admin_password').notNull().default('Admin@123'),
+  supportNumber: varchar('support_number', { length: 20 }),
+  upiId: varchar('upi_id', { length: 100 }),
+  upiQrCodeUrl: text('upi_qr_code_url'),
+  welcomeBonusAmount: integer('welcome_bonus_amount').default(100),
+  minDepositAmount: integer('min_deposit_amount').default(500),
+  minWithdrawalAmount: integer('min_withdrawal_amount').default(1000),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
