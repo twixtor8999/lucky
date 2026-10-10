@@ -1,14 +1,26 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getAllMarkets, publishOpenResult, publishCloseResult } from '@/app/actions/admin';
+import { getAllMarkets, publishOpenResult, publishCloseResult, publishSingleResult } from '@/app/actions/admin';
 import { Trophy, Calendar, X, Megaphone, Zap, Star } from 'lucide-react';
 
+// Detect market type from name
+function getMarketType(name: string): 'main' | 'starline' | 'jackpot' {
+  const n = name.toLowerCase();
+  if (n.includes('starline')) return 'starline';
+  if (n.includes('jackpot')) return 'jackpot';
+  return 'main';
+}
+
+// ─── Market Card ──────────────────────────────────────────────────────────────
 function MarketCard({ market, compact, onPublish }: {
   market: any;
   compact?: boolean;
-  onPublish: (market: any, step: 'OPEN' | 'CLOSE') => void;
+  onPublish: (market: any, step: 'OPEN' | 'CLOSE' | 'SINGLE') => void;
 }) {
+  const type = getMarketType(market.name);
+  const isSingle = type === 'starline' || type === 'jackpot';
+
   return (
     <div className={`bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow ${compact ? 'p-4' : 'p-5'}`}>
       <div className="flex justify-between items-start mb-3">
@@ -16,36 +28,52 @@ function MarketCard({ market, compact, onPublish }: {
           <h3 className={`font-black text-gray-900 uppercase tracking-tight leading-tight ${compact ? 'text-base' : 'text-xl'}`}>
             {market.name}
           </h3>
-          {(market.openTime || market.closeTime) && (
-            <div className="text-xs font-medium text-gray-400 flex gap-2 mt-1">
-              {market.openTime && <span>Open: {market.openTime}</span>}
-              {market.closeTime && <><span>•</span><span>Close: {market.closeTime}</span></>}
-            </div>
-          )}
+          {/* Format hint */}
+          <div className="text-xs font-medium text-gray-400 mt-1">
+            {type === 'main' && <span className="text-blue-500 font-bold">XXX-XX-XXX</span>}
+            {type === 'starline' && <span className="text-purple-500 font-bold">XXX-X</span>}
+            {type === 'jackpot' && <span className="text-amber-500 font-bold">XXX</span>}
+          </div>
         </div>
         <div className={`bg-red-50 rounded-full flex items-center justify-center shrink-0 ${compact ? 'w-8 h-8' : 'w-10 h-10'}`}>
           <Trophy className={`text-[#e42e2a] ${compact ? 'w-4 h-4' : 'w-5 h-5'}`} />
         </div>
       </div>
+
       <div className="flex flex-col gap-1.5 mt-3">
-        <button
-          onClick={() => onPublish(market, 'OPEN')}
-          className="w-full py-2 bg-gray-900 text-white font-bold rounded-xl hover:bg-black transition-colors flex items-center justify-center gap-2 text-sm"
-        >
-          <Megaphone className="w-3.5 h-3.5" />
-          Publish Open
-        </button>
-        <button
-          onClick={() => onPublish(market, 'CLOSE')}
-          className="w-full py-2 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors text-sm"
-        >
-          Publish Close
-        </button>
+        {isSingle ? (
+          // Starline / Jackpot: single publish button
+          <button
+            onClick={() => onPublish(market, 'SINGLE')}
+            className="w-full py-2 bg-gray-900 text-white font-bold rounded-xl hover:bg-black transition-colors flex items-center justify-center gap-2 text-sm"
+          >
+            <Megaphone className="w-3.5 h-3.5" />
+            Publish Result
+          </button>
+        ) : (
+          // Main games: two-step publish
+          <>
+            <button
+              onClick={() => onPublish(market, 'OPEN')}
+              className="w-full py-2 bg-gray-900 text-white font-bold rounded-xl hover:bg-black transition-colors flex items-center justify-center gap-2 text-sm"
+            >
+              <Megaphone className="w-3.5 h-3.5" />
+              Publish Open
+            </button>
+            <button
+              onClick={() => onPublish(market, 'CLOSE')}
+              className="w-full py-2 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors text-sm"
+            >
+              Publish Close
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
+// ─── Section Header ───────────────────────────────────────────────────────────
 function SectionHeader({ icon, title, subtitle, count }: {
   icon: React.ReactNode;
   title: string;
@@ -68,11 +96,14 @@ function SectionHeader({ icon, title, subtitle, count }: {
   );
 }
 
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function MarketManagementTab() {
   const [markets, setMarkets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Publish State
   const [selectedMarket, setSelectedMarket] = useState<any>(null);
-  const [publishStep, setPublishStep] = useState<'OPEN' | 'CLOSE'>('OPEN');
+  const [publishStep, setPublishStep] = useState<'OPEN' | 'CLOSE' | 'SINGLE'>('OPEN');
   const [publishDate, setPublishDate] = useState(new Date().toISOString().split('T')[0]);
   const [patti, setPatti] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
@@ -91,35 +122,63 @@ export default function MarketManagementTab() {
     }
   };
 
-  const mainMarkets = markets.filter(m =>
-    !m.name.toLowerCase().includes('starline') && !m.name.toLowerCase().includes('jackpot')
-  );
-  const starlineMarkets = markets.filter(m => m.name.toLowerCase().includes('starline'));
-  const jackpotMarkets = markets.filter(m => m.name.toLowerCase().includes('jackpot'));
+  const mainMarkets = markets.filter(m => getMarketType(m.name) === 'main');
+  const starlineMarkets = markets.filter(m => getMarketType(m.name) === 'starline');
+  const jackpotMarkets = markets.filter(m => getMarketType(m.name) === 'jackpot');
 
-  const openPublishModal = (market: any, step: 'OPEN' | 'CLOSE') => {
+  const openPublishModal = (market: any, step: 'OPEN' | 'CLOSE' | 'SINGLE') => {
     setSelectedMarket(market);
     setPublishStep(step);
     setPatti('');
     setPublishDate(new Date().toISOString().split('T')[0]);
   };
 
+  // Labels for modal
+  const modalTitle = publishStep === 'OPEN' ? 'Publish Open Result'
+    : publishStep === 'CLOSE' ? 'Publish Close Result'
+    : 'Publish Result';
+
+  const pattiLabel = publishStep === 'OPEN' ? 'Open Patti (3 Digits)'
+    : publishStep === 'CLOSE' ? 'Close Patti (3 Digits)'
+    : 'Patti (3 Digits)';
+
+  // Result format hint shown in modal
+  const formatHint = selectedMarket
+    ? getMarketType(selectedMarket.name) === 'starline' ? 'Result will show as: XXX-X'
+      : getMarketType(selectedMarket.name) === 'jackpot' ? 'Result will show as: XXX'
+      : publishStep === 'OPEN' ? 'Result will show as: XXX-X-*** (Close pending)'
+      : 'Final result: XXX-XX-XXX (Jodi auto-calculated)'
+    : '';
+
   const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedMarket || !patti) return;
+
     if (!/^\d{3}$/.test(patti)) {
       alert('Patti must be exactly 3 digits.');
       return;
     }
+
     setIsPublishing(true);
-    let res;
-    if (publishStep === 'OPEN') {
+    const marketType = getMarketType(selectedMarket.name);
+    let res: any;
+
+    if (publishStep === 'SINGLE') {
+      res = await publishSingleResult(
+        selectedMarket.id,
+        publishDate,
+        patti,
+        marketType as 'starline' | 'jackpot'
+      );
+      if (res.success) alert('Result Published!\nResult: ' + res.resultValue);
+    } else if (publishStep === 'OPEN') {
       res = await publishOpenResult(selectedMarket.id, publishDate, patti);
-      if (res.success) alert('Open Result Published!\nOpen Ank: ' + res.openAnk);
+      if (res.success) alert('Open Result Published!\nOpen Ank: ' + res.openAnk + '\nNow publish Close Result to complete.');
     } else {
       res = await publishCloseResult(selectedMarket.id, publishDate, patti);
-      if (res.success) alert('Close Result Published!\nClose Ank: ' + res.closeAnk + ' | Jodi: ' + res.jodi);
+      if (res.success) alert('Close Result Published!\nJodi: ' + res.jodi + '\nFull result saved!');
     }
+
     if (res.success) {
       setSelectedMarket(null);
       setPatti('');
@@ -142,7 +201,11 @@ export default function MarketManagementTab() {
     <div className="space-y-10">
       <div>
         <h2 className="text-2xl font-black text-gray-900">Market Management</h2>
-        <p className="text-gray-500 text-sm mt-1">Declare Open and Close results. Jodi is calculated automatically.</p>
+        <p className="text-gray-500 text-sm mt-1">
+          Main markets: <span className="font-bold text-blue-500">XXX-XX-XXX</span> &nbsp;|&nbsp;
+          Starline: <span className="font-bold text-purple-500">XXX-X</span> &nbsp;|&nbsp;
+          Jackpot: <span className="font-bold text-amber-500">XXX</span>
+        </p>
       </div>
 
       {/* Section 1: Main Markets */}
@@ -150,7 +213,7 @@ export default function MarketManagementTab() {
         <SectionHeader
           icon={<Trophy className="w-5 h-5 text-[#e42e2a]" />}
           title="Main Markets"
-          subtitle="Daily main satta matka markets — Kalyan, Milan, Rajdhani, Main Bazar, etc."
+          subtitle="Two-step publish: Open first, then Close. Jodi is auto-calculated."
           count={mainMarkets.length}
         />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -172,7 +235,7 @@ export default function MarketManagementTab() {
         <SectionHeader
           icon={<Star className="w-5 h-5 text-[#e42e2a]" />}
           title="Starline Markets"
-          subtitle="Hourly fast-paced markets — results declared throughout the day."
+          subtitle="Single publish. Format: XXX-X (Patti-Ank, Ank auto-calculated)"
           count={starlineMarkets.length}
         />
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
@@ -194,7 +257,7 @@ export default function MarketManagementTab() {
         <SectionHeader
           icon={<Zap className="w-5 h-5 text-[#e42e2a]" />}
           title="Jackpot Markets"
-          subtitle="High-value jackpot games declared at set times throughout the day."
+          subtitle="Single publish. Format: XXX (just the 3-digit result)"
           count={jackpotMarkets.length}
         />
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
@@ -214,13 +277,12 @@ export default function MarketManagementTab() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
             <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-              <h3 className="font-bold text-gray-900">
-                Publish {publishStep === 'OPEN' ? 'Open' : 'Close'} Result
-              </h3>
+              <h3 className="font-bold text-gray-900">{modalTitle}</h3>
               <button onClick={() => setSelectedMarket(null)} className="p-1 rounded-full hover:bg-gray-200">
                 <X className="w-5 h-5" />
               </button>
             </div>
+
             <form onSubmit={handlePublish} className="p-5">
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
@@ -229,10 +291,15 @@ export default function MarketManagementTab() {
                     <p className="font-black text-lg text-[#e42e2a]">{selectedMarket.name}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Phase</p>
-                    <p className="font-bold text-gray-900">{publishStep}</p>
+                    <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Format</p>
+                    <p className="font-bold text-gray-700 text-sm">
+                      {getMarketType(selectedMarket.name) === 'starline' && <span className="text-purple-500">XXX-X</span>}
+                      {getMarketType(selectedMarket.name) === 'jackpot' && <span className="text-amber-500">XXX</span>}
+                      {getMarketType(selectedMarket.name) === 'main' && <span className="text-blue-500">XXX-XX-XXX</span>}
+                    </p>
                   </div>
                 </div>
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Result Date</label>
@@ -249,9 +316,10 @@ export default function MarketManagementTab() {
                       />
                     </div>
                   </div>
+
                   <div>
                     <label className="block text-xs font-bold text-gray-700 uppercase mb-2">
-                      {publishStep === 'OPEN' ? 'Open Patti' : 'Close Patti'} (3 Digits)
+                      {pattiLabel}
                     </label>
                     <input
                       type="text"
@@ -262,12 +330,11 @@ export default function MarketManagementTab() {
                       placeholder="e.g. 358"
                       className="block w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-2xl text-center tracking-widest font-black text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#e42e2a]/50"
                     />
-                    <p className="text-xs text-gray-500 mt-2 text-center">
-                      The {publishStep === 'OPEN' ? 'Open Ank' : 'Close Ank + Jodi'} will be calculated automatically.
-                    </p>
+                    <p className="text-xs text-gray-400 mt-2 text-center">{formatHint}</p>
                   </div>
                 </div>
               </div>
+
               <div className="flex gap-3">
                 <button
                   type="button"
@@ -281,7 +348,7 @@ export default function MarketManagementTab() {
                   disabled={isPublishing || patti.length !== 3}
                   className="flex-1 py-3 bg-[#e42e2a] text-white font-bold rounded-xl hover:bg-[#d02522] transition-colors disabled:opacity-50 flex items-center justify-center shadow-sm"
                 >
-                  {isPublishing ? 'Publishing...' : 'Publish ' + publishStep}
+                  {isPublishing ? 'Publishing...' : modalTitle}
                 </button>
               </div>
             </form>

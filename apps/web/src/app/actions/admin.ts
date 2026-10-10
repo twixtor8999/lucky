@@ -262,11 +262,13 @@ export async function publishCloseResult(marketId: string, resultDate: string, c
   if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
 
   try {
-    const existingResult = await db.query.results.findFirst({
-      where: and(eq(results.marketId, marketId), eq(results.resultDate, resultDate))
-    });
+    const existingResult = await db.select().from(results)
+      .where(and(eq(results.marketId, marketId), eq(results.resultDate, resultDate)))
+      .limit(1);
 
-    if (!existingResult || existingResult.status !== 'OPEN_PUBLISHED') {
+    const existing = existingResult[0];
+
+    if (!existing || existing.status !== 'OPEN_PUBLISHED') {
       throw new Error('You must publish the Open Result first before publishing the Close Result.');
     }
 
@@ -275,8 +277,8 @@ export async function publishCloseResult(marketId: string, resultDate: string, c
     const closeAnk = (sum % 10).toString();
     
     // Jodi is just OpenAnk + CloseAnk
-    const jodi = `${existingResult.openAnk}${closeAnk}`;
-    const resultValue = `${existingResult.openPatti}-${jodi}-${closePatti}`;
+    const jodi = `${existing.openAnk}${closeAnk}`;
+    const resultValue = `${existing.openPatti}-${jodi}-${closePatti}`;
 
     await db.update(results).set({
       closePatti,
@@ -284,7 +286,7 @@ export async function publishCloseResult(marketId: string, resultDate: string, c
       resultValue,
       status: 'PUBLISHED',
       updatedAt: new Date()
-    }).where(eq(results.id, existingResult.id));
+    }).where(eq(results.id, existing.id));
 
     return { success: true, closeAnk, jodi };
   } catch (error: any) {
@@ -292,3 +294,59 @@ export async function publishCloseResult(marketId: string, resultDate: string, c
   }
 }
 
+// For Starline (format: XXX-X) and Jackpot (format: XXX) — single publish, no close session
+export async function publishSingleResult(
+  marketId: string,
+  resultDate: string,
+  patti: string,
+  marketType: 'starline' | 'jackpot'
+) {
+  const authCookie = cookies().get('admin_auth');
+  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+
+  try {
+    let resultValue: string;
+    let openAnk: string | undefined;
+
+    if (marketType === 'starline') {
+      // Starline: XXX-X (patti dash ank)
+      const sum = patti.split('').reduce((a, b) => a + parseInt(b, 10), 0);
+      openAnk = (sum % 10).toString();
+      resultValue = `${patti}-${openAnk}`;
+    } else {
+      // Jackpot: XXX (just the 3-digit patti)
+      resultValue = patti;
+    }
+
+    // Check if result already exists for this market+date (allow re-publishing)
+    const existing = await db.select().from(results)
+      .where(and(eq(results.marketId, marketId), eq(results.resultDate, resultDate)))
+      .limit(1);
+
+    if (existing[0]) {
+      // Update existing
+      await db.update(results).set({
+        openPatti: patti,
+        openAnk: openAnk ?? null,
+        resultValue,
+        status: 'PUBLISHED',
+        updatedAt: new Date(),
+      }).where(eq(results.id, existing[0].id));
+    } else {
+      // Insert new
+      await db.insert(results).values({
+        marketId,
+        resultDate,
+        resultValue,
+        openPatti: patti,
+        openAnk: openAnk ?? null,
+        status: 'PUBLISHED',
+        publishedAt: new Date(),
+      });
+    }
+
+    return { success: true, resultValue };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}

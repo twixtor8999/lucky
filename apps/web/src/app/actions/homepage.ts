@@ -1,7 +1,7 @@
 'use server';
 
-import { db, markets, results, marketSchedules } from '@zenvora/shared/db';
-import { desc, eq, and } from 'drizzle-orm';
+import { db, markets, results } from '@zenvora/shared/db';
+import { eq } from 'drizzle-orm';
 
 export async function getLiveHomepageData() {
   const today = new Date().toISOString().split('T')[0];
@@ -11,20 +11,20 @@ export async function getLiveHomepageData() {
 
   const formattedMarkets = allMarkets.map(market => {
     const todayResult = todayResults.find(r => r.marketId === market.id);
-    let displayResult = '***-**-***';
-    
-    if (todayResult) {
-      if (todayResult.status === 'OPEN_PUBLISHED') {
-        displayResult = `${todayResult.openPatti}-${todayResult.openAnk}-***`;
-      } else if (todayResult.status === 'PUBLISHED') {
-        displayResult = todayResult.resultValue;
-      }
-    }
+    const isStarline = market.name.toLowerCase().includes('starline');
+    const isJackpot = market.name.toLowerCase().includes('jackpot');
 
-    // For fast games (Starline/Jackpot) default format might just be ***-* or ***.
-    if (!todayResult) {
-      if (market.name.toLowerCase().includes('starline')) displayResult = '***-*';
-      if (market.name.toLowerCase().includes('jackpot')) displayResult = '***';
+    // Default placeholder per market type
+    let displayResult = isStarline ? '***-*' : isJackpot ? '***' : '***-**-***';
+
+    if (todayResult) {
+      if (todayResult.status === 'PUBLISHED') {
+        // For all types, stored resultValue is already in the correct format
+        displayResult = todayResult.resultValue;
+      } else if (todayResult.status === 'OPEN_PUBLISHED') {
+        // Only main games have an open-published intermediate phase
+        displayResult = `${todayResult.openPatti}-${todayResult.openAnk}-***`;
+      }
     }
 
     return {
@@ -32,7 +32,7 @@ export async function getLiveHomepageData() {
       name: market.name,
       slug: market.slug,
       result: displayResult,
-      isSpecial: market.name.toLowerCase().includes('jackpot') || market.name.toLowerCase().includes('starline')
+      isSpecial: isStarline || isJackpot
     };
   });
 
