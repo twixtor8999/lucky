@@ -1,8 +1,8 @@
 # Dependencies
 node_modules/
-
 # Next.js build output
 .next/
+apps/web/.next/
 out/
 
 # Generated files
