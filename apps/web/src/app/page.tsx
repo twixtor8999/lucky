@@ -490,7 +490,7 @@ export default async function HomePage() {
       </section>
 
       {/* 12. Giant Black Footer */}
-      <footer className="w-full bg-[#0a0a0a] text-white mt-8 pt-12 pb-24">
+      <footer className="w-full bg-[#0a0a0a] text-white mt-8 pt-12 pb-8">
         <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8 text-[13px] text-gray-400">
 
           <div className="flex flex-col gap-3">
@@ -558,9 +558,6 @@ export default async function HomePage() {
           Copyright © 2026 Lucky 777. All rights reserved.
         </div>
       </footer>
-
-      {/* Bottom padding so content isn't hidden behind the sticky bar */}
-      <div className="h-20"></div>
     </div>
   );
 }
