@@ -123,7 +123,7 @@ export default async function HomePage() {
 
       {/* 2. Hero Banner */}
       <section
-        className="w-full relative overflow-visible pt-12 pb-4 border-b border-gray-100"
+        className="w-full relative overflow-visible pt-12 pb-16 border-b border-gray-100"
         style={{
           background: `
             radial-gradient(circle at 35% 50%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 50%),
@@ -181,7 +181,7 @@ export default async function HomePage() {
 
           {/* Right Image — smaller, contained, no overflow */}
           <div className="flex-shrink-0 mt-6 md:mt-0 flex justify-center md:justify-end relative z-10 md:pr-10">
-            <div className="translate-y-[15px] md:translate-y-[20px]">
+            <div>
               <img
                 src="/hero-woman.png"
                 alt="Lucky 777 Woman"
