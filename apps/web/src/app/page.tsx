@@ -122,7 +122,7 @@ export default async function HomePage() {
 
       {/* 2. Hero Banner */}
       <section
-        className="w-full relative overflow-hidden pt-12 pb-24 border-b border-gray-100"
+        className="w-full relative overflow-visible pt-12 pb-20 border-b border-gray-100"
         style={{
           background: `
             radial-gradient(circle at 35% 50%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 50%),
@@ -184,34 +184,35 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* Floating Download APK Bar */}
-        <div className="absolute bottom-0 left-0 right-0 translate-y-1/2 z-30 flex justify-center w-full px-4">
-          <Link href="/download" className="w-full max-w-lg group cursor-pointer block relative transition-all duration-300 hover:scale-105">
-            <div
-              className="w-full h-14 md:h-[68px] rounded-full shadow-[0_10px_30px_rgba(228,46,42,0.45)] group-hover:shadow-[0_20px_50px_rgba(228,46,42,0.65)] flex items-center justify-center overflow-hidden relative border-[3px] border-white/30 transition-all duration-300"
-              style={{ background: 'linear-gradient(90deg, #c41e1a 0%, #e42e2a 40%, #ff5252 70%, #e42e2a 100%)' }}
-            >
-              {/* Animated shimmer on hover */}
-              <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12 pointer-events-none" />
-
-              {/* Pulse ring */}
-              <div className="absolute inset-0 rounded-full animate-ping opacity-20 bg-red-500 group-hover:hidden" />
-
-              <div className="flex items-center gap-3 text-white font-black text-[18px] md:text-[20px] tracking-wide relative z-10">
-                {/* Android Icon */}
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 md:w-7 md:h-7 group-hover:-translate-y-0.5 group-hover:scale-110 transition-transform duration-300">
-                  <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.81.24l-1.89 3.26C15.03 8.44 13.57 8.1 12 8.1c-1.57 0-3.03.34-4.48.85L5.63 5.69c-.16-.3-.52-.39-.81-.24-.29.16-.42.54-.26.85l1.84 3.18C3.52 11.23 1.6 14.36 1.13 18H22.87c-.47-3.64-2.39-6.77-5.27-8.52zM7 15.25c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25zm10 0c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25z" />
-                </svg>
-                <span className="group-hover:tracking-widest transition-all duration-300">Download APK</span>
-                <Download className="w-5 h-5 opacity-90 group-hover:translate-y-1 transition-transform duration-300" />
-              </div>
-            </div>
-          </Link>
-        </div>
       </section>
 
-      {/* spacer to accommodate the overlapping pill button */}
-      <div className="h-10 md:h-12 bg-white w-full"></div>
+      {/* Download APK Pill — sits BELOW the hero, overlapping the border */}
+      <div className="relative z-30 flex justify-center w-full px-4 -mt-8">
+        <Link href="/download" className="w-full max-w-lg group cursor-pointer block relative transition-all duration-300 hover:scale-105">
+          <div
+            className="w-full h-14 md:h-[68px] rounded-full shadow-[0_10px_30px_rgba(228,46,42,0.45)] group-hover:shadow-[0_20px_50px_rgba(228,46,42,0.65)] flex items-center justify-center overflow-hidden relative border-[3px] border-white/30 transition-all duration-300"
+            style={{ background: 'linear-gradient(90deg, #c41e1a 0%, #e42e2a 40%, #ff5252 70%, #e42e2a 100%)' }}
+          >
+            {/* Animated shimmer on hover */}
+            <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12 pointer-events-none" />
+
+            {/* Pulse ring */}
+            <div className="absolute inset-0 rounded-full animate-ping opacity-20 bg-red-500 group-hover:hidden" />
+
+            <div className="flex items-center gap-3 text-white font-black text-[18px] md:text-[20px] tracking-wide relative z-10">
+              {/* Android Icon */}
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 md:w-7 md:h-7 group-hover:-translate-y-0.5 group-hover:scale-110 transition-transform duration-300">
+                <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.81.24l-1.89 3.26C15.03 8.44 13.57 8.1 12 8.1c-1.57 0-3.03.34-4.48.85L5.63 5.69c-.16-.3-.52-.39-.81-.24-.29.16-.42.54-.26.85l1.84 3.18C3.52 11.23 1.6 14.36 1.13 18H22.87c-.47-3.64-2.39-6.77-5.27-8.52zM7 15.25c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25zm10 0c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25z" />
+              </svg>
+              <span className="group-hover:tracking-widest transition-all duration-300">Download APK</span>
+              <Download className="w-5 h-5 opacity-90 group-hover:translate-y-1 transition-transform duration-300" />
+            </div>
+          </div>
+        </Link>
+      </div>
+
+      {/* spacer below the pill */}
+      <div className="h-8 bg-white w-full"></div>
 
       {/* 4. Feature Icons */}
       <section className="w-full py-10 bg-white relative z-10">
