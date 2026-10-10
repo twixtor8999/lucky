@@ -123,7 +123,7 @@ export default async function HomePage() {
 
       {/* 2. Hero Banner */}
       <section
-        className="w-full relative overflow-visible pt-12 pb-20 border-b border-gray-100"
+        className="w-full relative overflow-visible pt-12 pb-4 border-b border-gray-100"
         style={{
           background: `
             radial-gradient(circle at 35% 50%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 50%),
@@ -135,10 +135,13 @@ export default async function HomePage() {
 
         {/* Floating Stars */}
         <div className="absolute top-[15%] left-[22%] text-[#ffcb05] z-10 drop-shadow-md">
-          <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8"><path d="M12 0L13.8 10.2L24 12L13.8 13.8L12 24L10.2 13.8L0 12L10.2 10.2L12 0Z" /></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7"><path d="M12 0L13.8 10.2L24 12L13.8 13.8L12 24L10.2 13.8L0 12L10.2 10.2L12 0Z" /></svg>
         </div>
-        <div className="absolute bottom-[30%] left-[52%] text-[#ffcb05] z-10 drop-shadow-md">
-          <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 opacity-90"><path d="M12 0L13.8 10.2L24 12L13.8 13.8L12 24L10.2 13.8L0 12L10.2 10.2L12 0Z" /></svg>
+        <div className="absolute top-[25%] right-[15%] text-[#ffcb05] z-10 drop-shadow-md hidden md:block">
+          <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M12 0L13.8 10.2L24 12L13.8 13.8L12 24L10.2 13.8L0 12L10.2 10.2L12 0Z" /></svg>
+        </div>
+        <div className="absolute bottom-[30%] left-[48%] text-[#ffcb05] z-10 drop-shadow-md">
+          <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 opacity-90"><path d="M12 0L13.8 10.2L24 12L13.8 13.8L12 24L10.2 13.8L0 12L10.2 10.2L12 0Z" /></svg>
         </div>
 
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-center relative z-20 px-4">
@@ -152,8 +155,12 @@ export default async function HomePage() {
               <span className="tracking-wide">INDIA'S <span className="text-[#e22e28]">NO.1</span> TRUSTED APP</span>
             </div>
 
-            <div className="text-[10px] sm:text-[12px] font-bold text-gray-500 tracking-[0.3em] uppercase mb-1 drop-shadow-sm">
-              Welcome To
+            <div className="flex items-center gap-3 mb-2 justify-center md:justify-start opacity-70">
+              <div className="h-[1px] w-8 bg-gray-400"></div>
+              <div className="text-[10px] sm:text-[12px] font-bold text-gray-500 tracking-[0.3em] uppercase drop-shadow-sm">
+                Welcome To
+              </div>
+              <div className="h-[1px] w-8 bg-gray-400"></div>
             </div>
 
             <h1 className="text-7xl sm:text-[90px] leading-[1] font-black text-[#e42e2a] italic tracking-[-0.04em] mb-1" style={{ textShadow: '2px 2px 0px rgba(255,255,255,0.8)' }}>
@@ -174,11 +181,13 @@ export default async function HomePage() {
 
           {/* Right Image — smaller, contained, no overflow */}
           <div className="flex-shrink-0 mt-6 md:mt-0 flex justify-center md:justify-end relative z-10 md:pr-10">
-            <img
-              src="/hero-woman.png"
-              alt="Lucky 777 Woman"
-              className="w-[220px] sm:w-[280px] md:w-[300px] object-contain drop-shadow-xl translate-y-6 md:translate-y-12 animate-float-complex"
-            />
+            <div className="translate-y-[15px] md:translate-y-[20px]">
+              <img
+                src="/hero-woman.png"
+                alt="Lucky 777 Woman"
+                className="w-[234px] sm:w-[294px] md:w-[324px] object-contain drop-shadow-xl animate-float-complex"
+              />
+            </div>
           </div>
         </div>
 
