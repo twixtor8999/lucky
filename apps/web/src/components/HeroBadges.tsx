@@ -28,11 +28,11 @@ export default function HeroBadges() {
   }, []);
 
   return (
-    <div className="h-10 relative overflow-hidden flex items-center justify-center min-w-[200px]">
+    <div className="h-14 relative overflow-hidden flex items-center justify-center md:justify-start w-full max-w-[280px] mt-2">
       {badges.map((badge, idx) => (
         <div
           key={idx}
-          className={`absolute inset-0 flex items-center justify-center transition-all duration-500 ease-in-out ${
+          className={`absolute inset-0 flex items-center justify-center md:justify-start transition-all duration-500 ease-in-out ${
             idx === currentIndex 
               ? 'opacity-100 translate-y-0' 
               : idx < currentIndex || (currentIndex === 0 && idx === badges.length - 1)
@@ -40,7 +40,7 @@ export default function HeroBadges() {
                 : 'opacity-0 translate-y-full'
           }`}
         >
-          <div className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-white rounded-full text-[14px] font-bold shadow-sm border border-gray-100">
+          <div className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-white rounded-full text-[14px] font-bold shadow-sm border border-gray-100 whitespace-nowrap">
             {badge.icon}
             <span className="tracking-wide">{badge.text}</span>
           </div>
