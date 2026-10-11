@@ -93,7 +93,7 @@ interface AppContextType {
   // Wallet
   wallet: WalletBalance;
   transactions: TransactionRecord[];
-  addMoney: (amount: number, utr: string) => Promise<{ success: boolean; txnId: string }>;
+  addMoney: (amount: number, utr: string) => Promise<{ success: boolean; txnId?: string; message?: string }>;
   requestWithdrawal: (amount: number, upiOrBank: string) => Promise<{ success: boolean; txnId: string; message: string }>;
 
   // Markets
@@ -390,18 +390,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Wallet: Add Money
   const addMoney = async (amount: number, utr: string) => {
     audioHaptics.playTap();
-    if (!user) return { success: false, txnId: '' };
+    if (!user) return { success: false, message: 'Please log in to add money' };
 
     const result = await addMoneyAction(amount, utr);
     if (!result.success) {
-      showToast('error', 'Error', result.message || 'Failed to submit deposit');
-      return { success: false, txnId: '' };
+      showToast('error', 'Deposit Failed', result.message || 'Failed to submit deposit');
+      return { success: false, message: result.message };
     }
 
     // Do NOT increment cashBalance here! It is pending owner verification.
-    
-    showToast('info', 'Deposit Pending', `₹${amount.toLocaleString()} deposit request submitted and is under review.`);
-    return { success: true, txnId: result.txnId || '' };
+    showToast('info', 'Deposit Pending', `₹${amount.toLocaleString()} deposit submitted. Waiting for owner verification.`);
+    return { success: true, txnId: result.txnId, message: result.message };
   };
 
   // Wallet: Request Withdrawal

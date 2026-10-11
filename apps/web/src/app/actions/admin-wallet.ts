@@ -13,7 +13,12 @@ async function verifyAdmin() {
   return user;
 }
 
-export async function approveDepositAction(depositId: string) {
+export async function approveDepositAction(
+  depositId: string, 
+  actualAmount?: number, 
+  confirmedUtr?: string, 
+  adminNote?: string
+) {
   const admin = await verifyAdmin();
   if (!admin) return { success: false, message: 'Unauthorized. Admin access required.' };
 
@@ -26,19 +31,45 @@ export async function approveDepositAction(depositId: string) {
       if (!deposit) throw new Error('Deposit not found');
       if (deposit.status !== 'PENDING') throw new Error('Deposit is already processed');
 
+      const verifiedAmt = Number.isFinite(actualAmount) && (actualAmount as number) > 0 
+        ? (actualAmount as number) 
+        : deposit.amountMinor;
+
+      if (confirmedUtr && confirmedUtr.trim()) {
+        if (confirmedUtr.trim().toUpperCase() !== deposit.utr.trim().toUpperCase()) {
+          throw new Error('Entered UTR does not match the deposit reference.');
+        }
+      }
+
       // 2. Find associated wallet
       const walletArr = await tx.select().from(wallets).where(eq(wallets.userId, deposit.userId)).limit(1);
       const wallet = walletArr[0];
       if (!wallet) throw new Error('User wallet not found');
 
-      // 3. Mark deposit SUCCESS
-      await tx.update(deposits)
-        .set({ status: 'COMPLETED' as any, processedAt: new Date(), processedBy: admin.id })
-        .where(eq(deposits.id, deposit.id));
+      // 3. Mark deposit COMPLETED with verified amount and admin note
+      const updated = await tx.update(deposits)
+        .set({ 
+          status: 'COMPLETED' as any, 
+          actualAmountMinor: verifiedAmt,
+          adminNote: adminNote?.trim() || 'Payment verified in bank statement.',
+          verifiedAt: new Date(),
+          processedAt: new Date(), 
+          processedBy: admin.id 
+        })
+        .where(and(eq(deposits.id, deposit.id), eq(deposits.status, 'PENDING' as any)))
+        .returning();
+
+      if (updated.length === 0) {
+        throw new Error('Deposit was already processed by another request.');
+      }
 
       // 4. Mark transaction COMPLETED
       await tx.update(transactions)
-        .set({ status: 'COMPLETED' as any, completedAt: new Date() })
+        .set({ 
+          status: 'COMPLETED' as any, 
+          amountMinor: verifiedAmt,
+          completedAt: new Date() 
+        })
         .where(and(eq(transactions.externalReference, deposit.utr), eq(transactions.type, 'DEPOSIT' as any)));
 
       // 5. Credit Wallet Ledger
@@ -46,18 +77,27 @@ export async function approveDepositAction(depositId: string) {
         walletId: wallet.id,
         entryType: 'CREDIT' as any,
         balanceType: 'CASH' as any,
-        amountMinor: deposit.amountMinor,
+        amountMinor: verifiedAmt,
         currency: 'INR',
-        referenceType: 'MANUAL_UPI_DEPOSIT',
+        referenceType: 'DEPOSIT',
         referenceId: deposit.id,
       });
 
-      return { success: true, deposit };
+      return { success: true, deposit, verifiedAmt };
     });
 
-    await writeAuditLog('ADMIN_ACTION', 'Deposit', { actorId: admin.id, entityId: depositId, metadata: { action: 'APPROVE', amount: result.deposit.amountMinor } });
+    await writeAuditLog('DEPOSIT_APPROVED', 'Deposit', { 
+      actorId: admin.id, 
+      entityId: depositId, 
+      metadata: { 
+        requestedAmount: result.deposit.amountMinor, 
+        verifiedAmount: result.verifiedAmt, 
+        utr: result.deposit.utr,
+        adminNote: adminNote?.trim(),
+      } 
+    });
 
-    return { success: true, message: 'Deposit approved and credited.' };
+    return { success: true, message: 'Deposit verified and credited successfully.' };
   } catch (error: any) {
     console.error('Error approving deposit:', error);
     return { success: false, message: error.message || 'Failed to approve deposit' };

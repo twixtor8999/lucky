@@ -1,7 +1,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { db, appSettings } from '@zenvora/shared/db';
+import { db, appSettings, systemSettings } from '@zenvora/shared/db';
 import { eq } from 'drizzle-orm';
 
 export async function getGlobalSettings() {
@@ -77,22 +77,32 @@ export async function updateAdminPassword(newPassword: string) {
 }
 
 export async function getPublicSettings() {
-  const settings = await db.select({
-    supportNumber: appSettings.supportNumber,
-    upiId: appSettings.upiId,
-    upiQrCodeUrl: appSettings.upiQrCodeUrl,
-    welcomeBonusAmount: appSettings.welcomeBonusAmount,
-    minWithdrawalAmount: appSettings.minWithdrawalAmount
-  }).from(appSettings).where(eq(appSettings.id, 'global')).limit(1);
+  try {
+    const appSet = (await db.select().from(appSettings).where(eq(appSettings.id, 'global')).limit(1))[0];
+    const sysSet = (await db.select().from(systemSettings).limit(1))[0];
 
-  if (settings.length === 0) {
     return {
-      supportNumber: '',
-      upiId: '',
+      supportNumber: appSet?.supportNumber || sysSet?.supportWhatsapp || '+919380347013',
+      ownerUpiId: appSet?.upiId || sysSet?.ownerUpiId || 'owner@upi',
+      ownerName: sysSet?.ownerName || 'Lucky 777',
+      upiQrCodeUrl: appSet?.upiQrCodeUrl || '',
+      welcomeBonusAmount: appSet?.welcomeBonusAmount || 100,
+      minDepositAmount: appSet?.minDepositAmount || 100,
+      minWithdrawalAmount: appSet?.minWithdrawalAmount || 500,
+      depositEnabled: sysSet ? sysSet.depositEnabled : true,
+      withdrawalEnabled: sysSet ? sysSet.withdrawalEnabled : true,
+    };
+  } catch (err) {
+    return {
+      supportNumber: '+919380347013',
+      ownerUpiId: 'owner@upi',
+      ownerName: 'Lucky 777',
       upiQrCodeUrl: '',
       welcomeBonusAmount: 100,
-      minWithdrawalAmount: 300
+      minDepositAmount: 100,
+      minWithdrawalAmount: 500,
+      depositEnabled: true,
+      withdrawalEnabled: true,
     };
   }
-  return settings[0];
 }

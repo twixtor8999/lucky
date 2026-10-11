@@ -357,6 +357,7 @@ export const deposits = pgTable('deposits', {
   rejectionReason: text('rejection_reason'),
   
   actualAmountMinor: bigint('actual_amount_minor', { mode: 'number' }),
+  adminNote: text('admin_note'),
   verifiedAt: timestamp('verified_at', { withTimezone: true }),
 
   requestedAt: timestamp('requested_at', { withTimezone: true }).defaultNow().notNull(),

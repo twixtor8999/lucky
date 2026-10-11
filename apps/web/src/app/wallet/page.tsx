@@ -2,49 +2,44 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Wallet, ArrowDownLeft, ArrowUpRight, Plus, History, ShieldCheck, Gift, Lock } from 'lucide-react';
+import { Wallet, ArrowDownLeft, ArrowUpRight, Plus, History, ShieldCheck, Gift, Lock, Clock } from 'lucide-react';
 import { audioHaptics } from '@/lib/audio-haptics';
-import { supabase } from '@/lib/supabase';
+import { getWalletAction, getTransactionHistoryAction } from '@/app/actions/wallet';
+import { getUserAction } from '@/app/actions/auth';
 
 export default function WalletPage() {
   const [sessionUser, setSessionUser] = useState<any>(null);
-  const [balance, setBalance] = useState<number>(0);
+  const [balances, setBalances] = useState<{
+    cashBalance: number;
+    bonusBalance: number;
+    lockedBalance: number;
+    totalBalance: number;
+  }>({ cashBalance: 0, bonusBalance: 0, lockedBalance: 0, totalBalance: 0 });
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchWalletData = async () => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const user = sessionData?.session?.user;
-      
-      if (user) {
-        setSessionUser(user);
-        
-        // Fetch Balance
-        const { data: walletData } = await supabase
-          .from('wallets')
-          .select('balance')
-          .eq('user_id', user.id)
-          .single();
-          
-        if (walletData) {
-          setBalance(walletData.balance);
-        } else {
-          // Auto-create wallet if it doesn't exist
-          await supabase.from('wallets').insert({ user_id: user.id, balance: 100 });
-          setBalance(100); // 100 signup bonus
+      try {
+        const userRes = await getUserAction();
+        if (userRes.success && userRes.user) {
+          setSessionUser(userRes.user);
+
+          const walletRes = await getWalletAction();
+          if (walletRes.success && walletRes.balances) {
+            setBalances(walletRes.balances);
+          }
+
+          const txnRes = await getTransactionHistoryAction();
+          if (txnRes.success && txnRes.transactions) {
+            setTransactions(txnRes.transactions);
+          }
         }
-
-        // Fetch Transactions
-        const { data: txns } = await supabase
-          .from('transactions')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (txns) setTransactions(txns);
+      } catch (err) {
+        console.error('Failed to load wallet:', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchWalletData();
@@ -101,7 +96,7 @@ export default function WalletPage() {
         <div className="flex items-baseline gap-1.5">
           <span className="text-2xl text-gray-400 font-bold">₹</span>
           <span className="text-5xl font-black text-gray-900 tracking-tight">
-            {balance.toLocaleString()}
+            {balances.totalBalance.toLocaleString()}
           </span>
         </div>
 
@@ -110,7 +105,7 @@ export default function WalletPage() {
           <div className="bg-gray-50 p-3 rounded-xl border border-gray-200 text-center">
             <span className="text-[10px] uppercase font-bold text-gray-500 block mb-1">Cash</span>
             <span className="text-sm font-black text-gray-900">
-              ₹{balance.toLocaleString()}
+              ₹{balances.cashBalance.toLocaleString()}
             </span>
           </div>
 
@@ -120,7 +115,7 @@ export default function WalletPage() {
               <span>Bonus</span>
             </span>
             <span className="text-sm font-black text-[#e42e2a]">
-              ₹0
+              ₹{balances.bonusBalance.toLocaleString()}
             </span>
           </div>
 
@@ -130,7 +125,7 @@ export default function WalletPage() {
               <span>Locked</span>
             </span>
             <span className="text-sm font-black text-gray-400">
-              ₹0
+              ₹{balances.lockedBalance.toLocaleString()}
             </span>
           </div>
         </div>
@@ -155,6 +150,16 @@ export default function WalletPage() {
             <span>Withdraw</span>
           </Link>
         </div>
+
+        {/* Deposit History Status Link */}
+        <Link
+          href="/wallet/history"
+          onClick={() => audioHaptics.playTap()}
+          className="w-full bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-colors uppercase tracking-wider mt-1"
+        >
+          <Clock className="w-4 h-4 text-amber-600" />
+          <span>View Deposit Requests Status</span>
+        </Link>
       </div>
 
       {/* Transaction History Feed */}

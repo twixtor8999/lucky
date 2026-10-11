@@ -37,7 +37,12 @@ export async function createSession(userId: string) {
 }
 
 export async function getServerSession() {
-  const token = cookies().get(SESSION_COOKIE_NAME)?.value;
+  let token: string | undefined;
+  try {
+    token = cookies().get(SESSION_COOKIE_NAME)?.value;
+  } catch {
+    token = (globalThis as any).__TEST_SESSION_TOKEN__;
+  }
   if (!token) return null;
 
   const tokenHash = hashToken(token);

@@ -1,9 +1,11 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { db, appSettings, users, wallets, transactions, ledgerEntries, deposits, markets, results } from '@zenvora/shared/db';
+import { db, appSettings, users, wallets, transactions, ledgerEntries, deposits, markets, results, notifications } from '@zenvora/shared/db';
 import { eq, and, desc } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
+import { getServerSession } from '../../lib/session';
+import { writeAuditLog } from '../../lib/audit';
 
 export async function loginAdmin(password: string) {
   try {
@@ -124,102 +126,263 @@ export async function confirmWelcomeBonusPayment(
   }
 }
 
-export async function getPendingDeposits() {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+async function verifyAdminAuth() {
+  let authCookieValue: string | undefined;
+  try {
+    authCookieValue = cookies().get('admin_auth')?.value;
+  } catch {
+    authCookieValue = (globalThis as any).__TEST_ADMIN_AUTH__;
+  }
 
-  const pendingDeposits = await db.select({
+  if (authCookieValue === 'authenticated') {
+    const adminUser = await db.select({ id: users.id }).from(users).where(eq(users.role, 'ADMIN')).limit(1);
+    return { isAuthorized: true, adminId: adminUser[0]?.id || null };
+  }
+
+  const sessionUser = await getServerSession();
+  if (sessionUser && sessionUser.role === 'ADMIN') {
+    return { isAuthorized: true, adminId: sessionUser.id };
+  }
+
+  return { isAuthorized: false, adminId: null };
+}
+
+function maskBankNumber(acc?: string | null): string {
+  if (!acc || acc.trim() === '') return 'Not Provided';
+  const clean = acc.trim();
+  if (clean.length <= 4) return 'XXXX ' + clean;
+  return 'XXXX XXXX ' + clean.slice(-4);
+}
+
+export async function getPendingDeposits(statusFilter?: 'ALL' | 'PENDING' | 'COMPLETED' | 'REJECTED') {
+  const auth = await verifyAdminAuth();
+  if (!auth.isAuthorized) throw new Error('Unauthorized');
+
+  const baseQuery = db.select({
     id: deposits.id,
     amount: deposits.amountMinor,
+    actualAmount: deposits.actualAmountMinor,
     utr: deposits.utr,
+    status: deposits.status,
+    adminNote: deposits.adminNote,
+    rejectionReason: deposits.rejectionReason,
     requestedAt: deposits.requestedAt,
+    verifiedAt: deposits.verifiedAt,
+    processedAt: deposits.processedAt,
     user: {
       id: users.id,
       phone: users.phone,
+      displayName: users.displayName,
+      upiId: users.upiId,
+      bankAccountName: users.bankAccountName,
+      bankAccountNumber: users.bankAccountNumber,
+      bankIfsc: users.bankIfsc,
+      bankName: users.bankName,
     }
   })
   .from(deposits)
-  .leftJoin(users, eq(deposits.userId, users.id))
-  .where(eq(deposits.status, 'PENDING'))
-  .orderBy(desc(deposits.requestedAt));
+  .leftJoin(users, eq(deposits.userId, users.id));
 
-  return pendingDeposits;
+  let results;
+  if (!statusFilter || statusFilter === 'PENDING') {
+    results = await baseQuery.where(eq(deposits.status, 'PENDING')).orderBy(desc(deposits.requestedAt));
+  } else if (statusFilter === 'ALL') {
+    results = await baseQuery.orderBy(desc(deposits.requestedAt));
+  } else {
+    results = await baseQuery.where(eq(deposits.status, statusFilter as any)).orderBy(desc(deposits.requestedAt));
+  }
+
+  return results.map(dep => ({
+    ...dep,
+    user: dep.user ? {
+      ...dep.user,
+      maskedBankAccount: maskBankNumber(dep.user.bankAccountNumber),
+    } : null,
+  }));
 }
 
-export async function approveDeposit(depositId: string, actualAmount: number, adminUserId?: string) {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+export async function approveDeposit(
+  depositId: string, 
+  actualAmount: number, 
+  confirmedUtr?: string,
+  adminNote?: string
+) {
+  const auth = await verifyAdminAuth();
+  if (!auth.isAuthorized) return { success: false, error: 'Unauthorized. Admin access required.' };
+
+  if (!Number.isFinite(actualAmount) || actualAmount <= 0) {
+    return { success: false, error: 'Actual amount received must be greater than ₹0.' };
+  }
 
   try {
-    await db.transaction(async (tx: any) => {
-      // 1. Get deposit
+    const result = await db.transaction(async (tx: any) => {
+      // 1. Lock/fetch deposit
       const deposit = await tx.query.deposits.findFirst({
         where: eq(deposits.id, depositId)
       });
-      if (!deposit || deposit.status !== 'PENDING') throw new Error('Invalid deposit request.');
 
-      // 2. Mark as completed and record actual amount
-      await tx.update(deposits)
+      if (!deposit) throw new Error('Deposit request not found.');
+      if (deposit.status !== 'PENDING') throw new Error('Deposit has already been processed or is no longer pending.');
+
+      // 2. Validate UTR confirmation if provided
+      if (confirmedUtr && confirmedUtr.trim()) {
+        if (confirmedUtr.trim().toUpperCase() !== deposit.utr.trim().toUpperCase()) {
+          throw new Error('Entered UTR does not match the deposit reference.');
+        }
+      }
+
+      // 3. Atomically update deposit status (prevent concurrent double-approval)
+      const updated = await tx.update(deposits)
         .set({ 
           status: 'COMPLETED', 
           actualAmountMinor: actualAmount,
+          adminNote: adminNote?.trim() || 'Payment verified in bank statement.',
           verifiedAt: new Date(),
-          processedAt: new Date() 
+          processedAt: new Date(),
+          processedBy: auth.adminId || null,
         })
-        .where(eq(deposits.id, depositId));
+        .where(and(eq(deposits.id, depositId), eq(deposits.status, 'PENDING')))
+        .returning();
 
-      // 3. Update wallet
+      if (updated.length === 0) {
+        throw new Error('Deposit was already processed by another request.');
+      }
+
+      // 4. Find or create user wallet
       const wallet = await tx.query.wallets.findFirst({
         where: eq(wallets.userId, deposit.userId)
       });
       let walletId = wallet?.id;
       if (!wallet) {
-        const [newWallet] = await tx.insert(wallets).values({ userId: deposit.userId }).returning();
+        const [newWallet] = await tx.insert(wallets).values({ userId: deposit.userId, currency: 'INR' }).returning();
         walletId = newWallet.id;
       }
 
-      // 4. Create transaction
-      const [txn] = await tx.insert(transactions).values({
-        userId: deposit.userId,
-        type: 'DEPOSIT',
-        amountMinor: actualAmount,
-        status: 'COMPLETED',
-        externalReference: deposit.utr
-      }).returning();
+      // 5. Update or insert transaction record
+      await tx.update(transactions)
+        .set({
+          status: 'COMPLETED',
+          amountMinor: actualAmount,
+          completedAt: new Date(),
+        })
+        .where(and(
+          eq(transactions.userId, deposit.userId),
+          eq(transactions.externalReference, deposit.utr),
+          eq(transactions.type, 'DEPOSIT')
+        ));
 
+      // 6. Insert Authoritative CASH CREDIT Ledger Entry
       await tx.insert(ledgerEntries).values({
         walletId: walletId!,
-        transactionId: txn.id,
         entryType: 'CREDIT',
         balanceType: 'CASH',
         amountMinor: actualAmount,
+        currency: 'INR',
         referenceType: 'DEPOSIT',
         referenceId: deposit.id,
-        description: `Deposit via UTR: ${deposit.utr}`
       });
+
+      // 7. Insert Real User Notification
+      await tx.insert(notifications).values({
+        userId: deposit.userId,
+        type: 'DEPOSIT_APPROVED',
+        title: '💰 Deposit Verified & Credited!',
+        body: `Your ₹${actualAmount.toLocaleString()} deposit (UTR: ${deposit.utr}) has been verified and credited to your wallet.`
+      });
+
+      return { success: true, deposit };
     });
-    return { success: true };
+
+    // 8. Write Audit Logs
+    await writeAuditLog('DEPOSIT_APPROVED', 'Deposit', {
+      actorId: auth.adminId || undefined,
+      entityId: depositId,
+      metadata: {
+        requestedAmount: result.deposit.amountMinor,
+        verifiedAmount: actualAmount,
+        utr: result.deposit.utr,
+        adminNote: adminNote?.trim(),
+      }
+    });
+
+    await writeAuditLog('WALLET_CREDIT_FROM_DEPOSIT', 'Ledger', {
+      actorId: auth.adminId || undefined,
+      entityId: depositId,
+      metadata: {
+        userId: result.deposit.userId,
+        amount: actualAmount,
+      }
+    });
+
+    return { success: true, message: 'Deposit verified and credited successfully.' };
   } catch (error: any) {
-    return { success: false, error: error.message };
+    console.error('Error approving deposit:', error);
+    return { success: false, error: error.message || 'Failed to approve deposit' };
   }
 }
 
 export async function rejectDeposit(depositId: string, reason: string) {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  const auth = await verifyAdminAuth();
+  if (!auth.isAuthorized) return { success: false, error: 'Unauthorized. Admin access required.' };
+
+  if (!reason || reason.trim() === '') {
+    return { success: false, error: 'A rejection reason is required.' };
+  }
 
   try {
-    await db.update(deposits)
-      .set({ 
-        status: 'REJECTED', 
-        rejectionReason: reason,
-        processedAt: new Date() 
-      })
-      .where(eq(deposits.id, depositId));
-      
-    return { success: true };
+    const result = await db.transaction(async (tx: any) => {
+      const updated = await tx.update(deposits)
+        .set({ 
+          status: 'REJECTED', 
+          rejectionReason: reason.trim(),
+          processedAt: new Date(),
+          processedBy: auth.adminId || null,
+        })
+        .where(and(eq(deposits.id, depositId), eq(deposits.status, 'PENDING')))
+        .returning();
+
+      if (updated.length === 0) {
+        throw new Error('Deposit is no longer pending or has already been processed.');
+      }
+
+      const deposit = updated[0];
+
+      await tx.update(transactions)
+        .set({ 
+          status: 'REJECTED', 
+          completedAt: new Date() 
+        })
+        .where(and(
+          eq(transactions.userId, deposit.userId),
+          eq(transactions.externalReference, deposit.utr),
+          eq(transactions.type, 'DEPOSIT')
+        ));
+
+      // Real User Notification
+      await tx.insert(notifications).values({
+        userId: deposit.userId,
+        type: 'DEPOSIT_REJECTED',
+        title: '❌ Deposit Request Rejected',
+        body: `Your deposit request for ₹${deposit.amountMinor} (UTR: ${deposit.utr}) was rejected. Reason: ${reason.trim()}`
+      });
+
+      return { success: true, deposit };
+    });
+
+    await writeAuditLog('DEPOSIT_REJECTED', 'Deposit', {
+      actorId: auth.adminId || undefined,
+      entityId: depositId,
+      metadata: {
+        amount: result.deposit.amountMinor,
+        utr: result.deposit.utr,
+        reason: reason.trim(),
+      }
+    });
+
+    return { success: true, message: 'Deposit rejected.' };
   } catch (error: any) {
-    return { success: false, error: error.message };
+    console.error('Error rejecting deposit:', error);
+    return { success: false, error: error.message || 'Failed to reject deposit' };
   }
 }
 

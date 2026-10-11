@@ -20,6 +20,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# OS files
+# OS & IDE files
 .DS_Store
 Thumbs.db
+.idea/
+*.tsbuildinfo

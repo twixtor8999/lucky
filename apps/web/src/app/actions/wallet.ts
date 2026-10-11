@@ -1,6 +1,6 @@
 'use server';
 
-import { db, wallets, transactions, ledgerEntries, bonusCampaigns, bonusClaims, systemSettings, deposits } from '@zenvora/shared/db';
+import { db, wallets, transactions, ledgerEntries, bonusCampaigns, bonusClaims, systemSettings, deposits, users } from '@zenvora/shared/db';
 import { eq, and, desc } from 'drizzle-orm';
 import { getServerSession } from '../../lib/session';
 import { z } from 'zod';
@@ -83,7 +83,12 @@ export async function addMoneyAction(amountInput: number, utr: string) {
   const amount = amtRes.data;
 
   if (!utr || typeof utr !== 'string' || utr.trim() === '') {
-    return { success: false, message: 'Invalid UTR/Reference' };
+    return { success: false, message: 'Invalid UTR/Reference number' };
+  }
+
+  const cleanUtr = utr.trim().toUpperCase();
+  if (cleanUtr.length < 6 || cleanUtr.length > 50) {
+    return { success: false, message: 'UTR must be between 6 and 50 characters' };
   }
 
   try {
@@ -106,17 +111,18 @@ export async function addMoneyAction(amountInput: number, utr: string) {
 
     const result = await db.transaction(async (tx) => {
       // Check for duplicate UTR globally
-      const existingUtr = await tx.select().from(deposits).where(eq(deposits.utr, utr.trim())).limit(1);
+      const existingUtr = await tx.select().from(deposits).where(eq(deposits.utr, cleanUtr)).limit(1);
       if (existingUtr.length > 0) {
         throw new Error('DUPLICATE_UTR');
       }
 
-      // Create deposit request
+      // Create deposit request (PENDING status, never credit wallet directly)
       const insertedDeposit = await tx.insert(deposits).values({
         userId: user.id,
         amountMinor: amount,
         status: 'PENDING' as any,
-        utr: utr.trim(),
+        utr: cleanUtr,
+        requestedAt: new Date(),
       }).returning();
       
       const depositRec = insertedDeposit[0];
@@ -128,26 +134,88 @@ export async function addMoneyAction(amountInput: number, utr: string) {
         status: 'PENDING' as any,
         amountMinor: amount,
         currency: 'INR',
-        externalReference: depositRec.utr,
+        externalReference: cleanUtr,
         idempotencyKey: 'DEP_' + depositRec.id,
       }).returning();
 
-      return { txnId: insertedTxn[0].id, depositId: depositRec.id };
+      return { txnId: insertedTxn[0].id, depositId: depositRec.id, deposit: depositRec };
     });
 
-    await writeAuditLog('DEPOSIT_INITIATED', 'Transaction', { actorId: user.id, entityId: result.depositId, metadata: { amount, utr } });
+    await writeAuditLog('DEPOSIT_CREATED', 'Deposit', { 
+      actorId: user.id, 
+      entityId: result.depositId, 
+      metadata: { amount, utr: cleanUtr } 
+    });
 
     return { 
       success: true, 
       txnId: result.txnId, 
-      message: 'Deposit request submitted successfully'
+      depositId: result.depositId,
+      deposit: {
+        id: result.deposit.id,
+        amount: result.deposit.amountMinor,
+        utr: result.deposit.utr,
+        status: 'PENDING',
+        requestedAt: result.deposit.requestedAt,
+      },
+      message: 'Your payment is waiting for verification. Your wallet will be credited after the payment is verified.'
     };
   } catch (error: any) {
     console.error('Error in addMoneyAction:', error);
-    if (error.message === 'DUPLICATE_UTR') {
-      return { success: false, message: 'This UTR has already been submitted.' };
+    if (error.message === 'DUPLICATE_UTR' || error.code === '23505') {
+      return { success: false, message: 'That transaction reference has already been submitted.' };
     }
     return { success: false, message: 'Failed to submit deposit request' };
+  }
+}
+
+export async function getUserDepositsAction() {
+  const user = await getServerSession();
+  if (!user) return { success: false, message: 'Unauthorized', deposits: [] };
+
+  try {
+    const list = await db.select({
+      id: deposits.id,
+      amount: deposits.amountMinor,
+      status: deposits.status,
+      utr: deposits.utr,
+      actualAmount: deposits.actualAmountMinor,
+      adminNote: deposits.adminNote,
+      rejectionReason: deposits.rejectionReason,
+      requestedAt: deposits.requestedAt,
+      verifiedAt: deposits.verifiedAt,
+      processedAt: deposits.processedAt,
+    })
+    .from(deposits)
+    .where(eq(deposits.userId, user.id))
+    .orderBy(desc(deposits.requestedAt));
+
+    return { success: true, deposits: list };
+  } catch (err: any) {
+    console.error('Error in getUserDepositsAction:', err);
+    return { success: false, message: 'Failed to fetch deposits', deposits: [] };
+  }
+}
+
+export async function getUserPaymentDetailsAction() {
+  const user = await getServerSession();
+  if (!user) return { success: false, message: 'Unauthorized', details: null };
+
+  try {
+    const u = await db.select({
+      upiId: users.upiId,
+      bankAccountName: users.bankAccountName,
+      bankAccountNumber: users.bankAccountNumber,
+      bankIfsc: users.bankIfsc,
+      bankName: users.bankName,
+      displayName: users.displayName,
+      phone: users.phone,
+    }).from(users).where(eq(users.id, user.id)).limit(1);
+
+    return { success: true, details: u[0] || null };
+  } catch (err: any) {
+    console.error('Error in getUserPaymentDetailsAction:', err);
+    return { success: false, message: 'Failed to fetch payment details', details: null };
   }
 }
 

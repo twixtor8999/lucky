@@ -33,11 +33,15 @@ export function checkRateLimit(ip: string, actionName: string, maxRequests: numb
 }
 
 export function getClientIp() {
-  // In Next.js Server Actions, we can use headers() to get the IP.
-  const { headers } = require('next/headers');
-  const forwardedFor = headers().get('x-forwarded-for');
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim();
+  try {
+    const { headers } = require('next/headers');
+    const headerList = headers();
+    const forwardedFor = headerList.get('x-forwarded-for');
+    if (forwardedFor) {
+      return forwardedFor.split(',')[0].trim();
+    }
+    return headerList.get('x-real-ip') || '127.0.0.1';
+  } catch (err) {
+    return '127.0.0.1';
   }
-  return headers().get('x-real-ip') || '127.0.0.1';
 }
