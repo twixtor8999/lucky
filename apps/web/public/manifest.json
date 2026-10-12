@@ -2,10 +2,10 @@
   "name": "Mantri777",
   "short_name": "Mantri777",
   "description": "Play and Win Big",
-  "start_url": "/",
+  "start_url": "/?app=true",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#e42e2a",
+  "background_color": "#fff5f5",
+  "theme_color": "#e22e28",
   "icons": [
     {
       "src": "/favicon.ico",

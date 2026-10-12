@@ -12,8 +12,10 @@ packages/shared/src/db/schema.d.ts
 
 # Environment secrets
 .env
+.env*
 .env.local
 .env.production
+**/.env*
 
 # Debug logs
 npm-debug.log*
