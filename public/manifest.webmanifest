@@ -1,0 +1,42 @@
+{
+  "name": "Lucky 777 — Live Market & Gaming Platform",
+  "short_name": "Lucky 777",
+  "description": "Mobile-first Satta Matka platform with real-time markets, instant betting, live results, and instant wallet settlements.",
+  "start_url": "/home",
+  "display": "standalone",
+  "background_color": "#0a0b0e",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Live Markets",
+      "url": "/markets",
+      "description": "View live market opening & closing charts"
+    },
+    {
+      "name": "My Bets",
+      "url": "/bets",
+      "description": "Check active bet slips and outcomes"
+    },
+    {
+      "name": "Wallet",
+      "url": "/wallet",
+      "description": "Add funds or view balance"
+    }
+  ],
+  "categories": ["entertainment", "finance", "games"]
+}
