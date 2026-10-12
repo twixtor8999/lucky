@@ -20,23 +20,49 @@ function MarketCard({ market, compact, onPublish }: {
 }) {
   const type = getMarketType(market.name);
   const isSingle = type === 'starline' || type === 'jackpot';
+  const currentResult = market.currentResult;
+  const isOpenPublished = type === 'main' && currentResult?.status === 'OPEN_PUBLISHED';
+  const isFullyPublished = currentResult?.status === 'PUBLISHED';
 
   return (
-    <div className={`bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow ${compact ? 'p-4' : 'p-5'}`}>
+    <div className={`bg-white border rounded-2xl shadow-sm hover:shadow-md transition-shadow ${isOpenPublished ? 'border-amber-300 ring-1 ring-amber-200' : 'border-gray-200'} ${compact ? 'p-4' : 'p-5'}`}>
       <div className="flex justify-between items-start mb-3">
         <div>
           <h3 className={`font-black text-gray-900 uppercase tracking-tight leading-tight ${compact ? 'text-base' : 'text-xl'}`}>
             {market.name}
           </h3>
-          {/* Format hint */}
-          <div className="text-xs font-medium text-gray-400 mt-1">
-            {type === 'main' && <span className="text-blue-500 font-bold">XXX-XX-XXX</span>}
-            {type === 'starline' && <span className="text-purple-500 font-bold">XXX-X</span>}
-            {type === 'jackpot' && <span className="text-amber-500 font-bold">XXX</span>}
+          {/* Result Display */}
+          <div className="mt-1">
+            {isOpenPublished ? (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-base font-black tracking-widest text-blue-600 font-mono">
+                  {currentResult.resultValue}
+                </span>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                  Open: {currentResult.openPatti} (Ank {currentResult.openAnk})
+                </span>
+              </div>
+            ) : isFullyPublished ? (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-base font-black tracking-widest text-emerald-600 font-mono">
+                  {currentResult.resultValue}
+                </span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                  Declared
+                </span>
+              </div>
+            ) : (
+              <div className="text-xs font-medium text-gray-400">
+                {type === 'main' && <span className="text-blue-500 font-bold font-mono">XXX-XX-XXX</span>}
+                {type === 'starline' && <span className="text-purple-500 font-bold font-mono">XXX-X</span>}
+                {type === 'jackpot' && <span className="text-amber-500 font-bold font-mono">XXX</span>}
+              </div>
+            )}
           </div>
         </div>
-        <div className={`bg-red-50 rounded-full flex items-center justify-center shrink-0 ${compact ? 'w-8 h-8' : 'w-10 h-10'}`}>
-          <Trophy className={`text-[#e42e2a] ${compact ? 'w-4 h-4' : 'w-5 h-5'}`} />
+        <div className={`rounded-full flex items-center justify-center shrink-0 ${isOpenPublished ? 'bg-amber-100' : 'bg-red-50'} ${compact ? 'w-8 h-8' : 'w-10 h-10'}`}>
+          <Trophy className={`${isOpenPublished ? 'text-amber-600' : 'text-[#e42e2a]'} ${compact ? 'w-4 h-4' : 'w-5 h-5'}`} />
         </div>
       </div>
 
@@ -48,21 +74,29 @@ function MarketCard({ market, compact, onPublish }: {
             className="w-full py-2 bg-gray-900 text-white font-bold rounded-xl hover:bg-black transition-colors flex items-center justify-center gap-2 text-sm"
           >
             <Megaphone className="w-3.5 h-3.5" />
-            Publish Result
+            {isFullyPublished ? 'Re-publish Result' : 'Publish Result'}
           </button>
         ) : (
           // Main games: two-step publish
           <>
             <button
               onClick={() => onPublish(market, 'OPEN')}
-              className="w-full py-2 bg-gray-900 text-white font-bold rounded-xl hover:bg-black transition-colors flex items-center justify-center gap-2 text-sm"
+              className={`w-full py-2 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm ${
+                isOpenPublished 
+                  ? 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200' 
+                  : 'bg-gray-900 text-white hover:bg-black'
+              }`}
             >
               <Megaphone className="w-3.5 h-3.5" />
-              Publish Open
+              {isOpenPublished ? `Edit Open (${currentResult.openPatti})` : 'Publish Open'}
             </button>
             <button
               onClick={() => onPublish(market, 'CLOSE')}
-              className="w-full py-2 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors text-sm"
+              className={`w-full py-2 font-bold rounded-xl transition-colors text-sm ${
+                isOpenPublished
+                  ? 'bg-[#e42e2a] text-white hover:bg-[#d02522] shadow-sm'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
             >
               Publish Close
             </button>
@@ -129,8 +163,12 @@ export default function MarketManagementTab() {
   const openPublishModal = (market: any, step: 'OPEN' | 'CLOSE' | 'SINGLE') => {
     setSelectedMarket(market);
     setPublishStep(step);
-    setPatti('');
-    setPublishDate(new Date().toISOString().split('T')[0]);
+    if (step === 'OPEN' && market.currentResult?.openPatti) {
+      setPatti(market.currentResult.openPatti);
+    } else {
+      setPatti('');
+    }
+    setPublishDate(market.currentResult?.resultDate || new Date().toISOString().split('T')[0]);
   };
 
   // Labels for modal
@@ -299,6 +337,31 @@ export default function MarketManagementTab() {
                     </p>
                   </div>
                 </div>
+
+                {publishStep === 'CLOSE' && selectedMarket.currentResult?.openPatti && (
+                  <div className="mb-4 p-3.5 bg-amber-50 border border-amber-200 rounded-xl">
+                    <p className="text-[11px] font-bold text-amber-800 uppercase tracking-wider">Previously Entered Open</p>
+                    <div className="flex items-center justify-between mt-1">
+                      <p className="font-black text-gray-900 text-sm">
+                        Open Patti: <span className="text-[#e42e2a] font-mono text-base">{selectedMarket.currentResult.openPatti}</span>
+                        &nbsp;&nbsp;|&nbsp;&nbsp;
+                        Open Ank: <span className="text-[#e42e2a] font-mono text-base">{selectedMarket.currentResult.openAnk}</span>
+                      </p>
+                      <span className="text-xs font-mono font-bold px-2 py-0.5 bg-white border border-amber-200 text-amber-900 rounded-lg">
+                        {selectedMarket.currentResult.openPatti}-{selectedMarket.currentResult.openAnk}-***
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {publishStep === 'OPEN' && selectedMarket.currentResult?.openPatti && (
+                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                    <p className="text-[11px] font-bold text-blue-800 uppercase tracking-wider">Current Open Result</p>
+                    <p className="text-xs font-medium text-gray-800 mt-0.5">
+                      Currently set to Patti <span className="font-bold text-blue-700">{selectedMarket.currentResult.openPatti}</span> (Ank: {selectedMarket.currentResult.openAnk}). You can re-enter or change it below.
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   <div>

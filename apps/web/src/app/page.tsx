@@ -5,6 +5,9 @@ import { Download, HelpCircle, Phone, MessageCircle, ChevronDown } from 'lucide-
 import StickyDownloadBar from '@/components/StickyDownloadBar';
 import HeroBadges from '@/components/HeroBadges';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function HomePage() {
   const { mainGames: games, starlineGames, jackpotGames } = await getLiveHomepageData();
 
@@ -177,17 +180,6 @@ export default async function HomePage() {
 
             {/* Animated Badges */}
             <HeroBadges />
-          </div>
-
-          {/* Right Image — smaller, contained, no overflow */}
-          <div className="flex-shrink-0 mt-6 md:mt-0 flex justify-center md:justify-end relative z-10 md:pr-10">
-            <div className="translate-y-[15px] md:translate-y-[20px]">
-              <img
-                src="/hero-woman.png"
-                alt="Lucky 777 Woman"
-                className="w-[234px] sm:w-[294px] md:w-[324px] object-contain drop-shadow-xl animate-float-complex"
-              />
-            </div>
           </div>
         </div>
 
@@ -381,10 +373,20 @@ export default async function HomePage() {
                       {market.result}
                     </div>
                   </div>
-                  <button className="bg-[#a3a3a3] hover:bg-[#e42e2a] transition-colors text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                    Play
-                  </button>
+                  {market.isOpen ? (
+                    <Link
+                      href={`/markets/${market.slug}/play`}
+                      className="bg-[#de302a] hover:bg-[#c92424] transition-all transform active:scale-95 text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1 shadow-sm"
+                    >
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                      Play
+                    </Link>
+                  ) : (
+                    <button disabled className="bg-gray-300 text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1 cursor-not-allowed">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                      Play
+                    </button>
+                  )}
                 </div>
                 <div className="w-full h-px bg-gray-100"></div>
                 <div className="p-3 px-4 flex justify-between">
@@ -412,10 +414,20 @@ export default async function HomePage() {
                     </div>
                     <div className="text-[20px] md:text-[22px] font-black tracking-widest text-[#111]">{market.result}</div>
                   </div>
-                  <button className="bg-[#a3a3a3] hover:bg-[#e42e2a] transition-colors text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                    Play
-                  </button>
+                  {market.isOpen ? (
+                    <Link
+                      href={`/markets/${market.slug}/play`}
+                      className="bg-[#de302a] hover:bg-[#c92424] transition-all transform active:scale-95 text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1 shadow-sm"
+                    >
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                      Play
+                    </Link>
+                  ) : (
+                    <button disabled className="bg-gray-300 text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1 cursor-not-allowed">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                      Play
+                    </button>
+                  )}
                 </div>
                 <div className="w-full h-px bg-gray-100"></div>
                 <div className="p-3 px-4 flex justify-start">
@@ -442,10 +454,20 @@ export default async function HomePage() {
                     </div>
                     <div className="text-[20px] md:text-[22px] font-black tracking-widest text-[#111]">{market.result}</div>
                   </div>
-                  <button className={`transition-colors text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1 ${market.isSpecial ? 'bg-[#de302a] hover:bg-[#c92424]' : 'bg-[#a3a3a3] hover:bg-[#e42e2a]'}`}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                    Play
-                  </button>
+                  {market.isOpen ? (
+                    <Link
+                      href={`/markets/${market.slug}/play`}
+                      className="bg-[#de302a] hover:bg-[#c92424] transition-all transform active:scale-95 text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1 shadow-sm"
+                    >
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                      Play
+                    </Link>
+                  ) : (
+                    <button disabled className="bg-gray-300 text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1 cursor-not-allowed">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                      Play
+                    </button>
+                  )}
                 </div>
                 <div className="w-full h-px bg-gray-100"></div>
                 <div className="p-3 px-4 flex justify-start">

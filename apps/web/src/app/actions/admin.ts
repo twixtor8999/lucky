@@ -1,6 +1,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
+import { revalidatePath } from 'next/cache';
 import { db, appSettings, users, wallets, transactions, ledgerEntries, deposits, markets, results, notifications } from '@zenvora/shared/db';
 import { eq, and, desc } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
@@ -390,7 +391,25 @@ export async function getAllMarkets() {
   const authCookie = cookies().get('admin_auth');
   if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
 
-  return await db.select().from(markets).orderBy(markets.createdAt);
+  const allMarkets = await db.select().from(markets).orderBy(markets.createdAt);
+  const allResults = await db.select().from(results).orderBy(desc(results.resultDate), desc(results.createdAt));
+
+  return allMarkets.map(m => {
+    const latestRes = allResults.find(r => r.marketId === m.id);
+    return {
+      ...m,
+      currentResult: latestRes ? {
+        id: latestRes.id,
+        resultDate: latestRes.resultDate,
+        resultValue: latestRes.resultValue,
+        openPatti: latestRes.openPatti,
+        openAnk: latestRes.openAnk,
+        closeAnk: latestRes.closeAnk,
+        closePatti: latestRes.closePatti,
+        status: latestRes.status,
+      } : null
+    };
+  });
 }
 
 
@@ -404,17 +423,32 @@ export async function publishOpenResult(marketId: string, resultDate: string, op
     const openAnk = (sum % 10).toString();
     const resultValue = `${openPatti}-${openAnk}-***`;
 
-    await db.insert(results).values({
-      marketId,
-      resultDate,
-      resultValue,
-      openPatti,
-      openAnk,
-      status: 'OPEN_PUBLISHED',
-      publishedAt: new Date(),
-    });
+    const existing = await db.select().from(results)
+      .where(and(eq(results.marketId, marketId), eq(results.resultDate, resultDate)))
+      .limit(1);
 
-    return { success: true, openAnk };
+    if (existing[0]) {
+      await db.update(results).set({
+        resultValue,
+        openPatti,
+        openAnk,
+        status: 'OPEN_PUBLISHED',
+        updatedAt: new Date()
+      }).where(eq(results.id, existing[0].id));
+    } else {
+      await db.insert(results).values({
+        marketId,
+        resultDate,
+        resultValue,
+        openPatti,
+        openAnk,
+        status: 'OPEN_PUBLISHED',
+        publishedAt: new Date(),
+      });
+    }
+
+    revalidatePath('/');
+    return { success: true, openAnk, resultValue };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
@@ -451,6 +485,7 @@ export async function publishCloseResult(marketId: string, resultDate: string, c
       updatedAt: new Date()
     }).where(eq(results.id, existing.id));
 
+    revalidatePath('/');
     return { success: true, closeAnk, jodi };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -508,6 +543,7 @@ export async function publishSingleResult(
       });
     }
 
+    revalidatePath('/');
     return { success: true, resultValue };
   } catch (error: any) {
     return { success: false, error: error.message };

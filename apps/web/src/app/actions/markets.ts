@@ -1,7 +1,7 @@
 'use server';
 
-import { db, markets, marketSchedules } from '@zenvora/shared/db';
-import { eq, asc } from 'drizzle-orm';
+import { db, markets, marketSchedules, results } from '@zenvora/shared/db';
+import { eq, asc, desc } from 'drizzle-orm';
 import { MarketStatus, Market } from '@zenvora/shared';
 import crypto from 'crypto';
 
@@ -41,6 +41,7 @@ export async function seedMarketsAction() {
 export async function getMarketsAction() {
   const allMarkets = await db.select().from(markets).orderBy(asc(markets.name));
   const schedules = await db.select().from(marketSchedules);
+  const allResults = await db.select().from(results).orderBy(desc(results.resultDate), desc(results.createdAt));
 
   const now = new Date();
   const currentHour = now.getHours();
@@ -49,6 +50,10 @@ export async function getMarketsAction() {
 
   const result: Market[] = allMarkets.map(m => {
     const sched = schedules.find(s => s.marketId === m.id);
+    const latestRes = allResults.find(r => r.marketId === m.id);
+    const isOpenedByAdmin = latestRes?.status === 'OPEN_PUBLISHED';
+    const isFullyClosed = latestRes?.status === 'PUBLISHED';
+
     let isCurrentlyOpen = false;
     
     if (sched) {
@@ -59,7 +64,14 @@ export async function getMarketsAction() {
       }
     }
 
-    const calculatedStatus = isCurrentlyOpen && m.status === 'OPEN' ? MarketStatus.OPEN : MarketStatus.CLOSED;
+    let calculatedStatus = MarketStatus.CLOSED;
+    if (isOpenedByAdmin) {
+      calculatedStatus = MarketStatus.OPEN;
+    } else if (isFullyClosed) {
+      calculatedStatus = MarketStatus.CLOSED;
+    } else if (isCurrentlyOpen && m.status === 'OPEN') {
+      calculatedStatus = MarketStatus.OPEN;
+    }
 
     return {
       id: m.id,
