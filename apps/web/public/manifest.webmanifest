@@ -1,11 +1,11 @@
 {
   "name": "Mantri777 — Live Market & Gaming Platform",
   "short_name": "Mantri777",
-  "description": "Mobile-first Satta Matka platform with real-time markets, instant betting, live results, and instant wallet settlements.",
-  "start_url": "/home",
+  "description": "India's #1 Trusted Satta Matka platform with real-time markets, instant betting, live results, and instant wallet settlements.",
+  "start_url": "/?app=true",
   "display": "standalone",
-  "background_color": "#0a0b0e",
-  "theme_color": "#f59e0b",
+  "background_color": "#fff5f5",
+  "theme_color": "#e22e28",
   "orientation": "portrait-primary",
   "icons": [
     {

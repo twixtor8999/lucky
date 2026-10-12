@@ -5,6 +5,7 @@ import { Download, HelpCircle, Phone, MessageCircle, ChevronDown } from 'lucide-
 import StickyDownloadBar from '@/components/StickyDownloadBar';
 import HeroBadges from '@/components/HeroBadges';
 import LiveGamesSection from '@/components/LiveGamesSection';
+import AppAdaptiveRoot from '@/components/mobile/AppAdaptiveRoot';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -32,14 +33,54 @@ export default async function HomePage() {
     "RAJDHANI NIGHT", "KALYAN NIGHT", "MAIN BAZAR"
   ];
 
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: f.a,
+      },
+    })),
+  };
+
+  const appJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Mantri777',
+    applicationCategory: 'GameApplication',
+    operatingSystem: 'Android, iOS, Web',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'INR',
+    },
+    description: "India's No.1 Trusted Satta Matka platform with fastest live results, charts, and instant withdrawals.",
+  };
+
   return (
-    <div className="w-full min-h-screen bg-white flex flex-col font-sans text-gray-900">
+    <AppAdaptiveRoot
+      initialMainGames={games}
+      initialStarlineGames={starlineGames}
+      initialJackpotGames={jackpotGames}
+    >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }}
+      />
+      <div className="w-full min-h-screen bg-white flex flex-col font-sans text-gray-900">
 
-      {/* Sticky Floating Download Bar (client component) */}
-      <StickyDownloadBar />
+        {/* Sticky Floating Download Bar (client component) */}
+        <StickyDownloadBar />
 
-      {/* 1. Black Top Nav */}
-      <header className="w-full bg-black text-white sticky top-0 z-50">
+        {/* 1. Black Top Nav */}
+        <header className="w-full bg-black text-white sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           {/* Logo Area */}
           <div className="flex items-center gap-2">
@@ -183,13 +224,13 @@ export default async function HomePage() {
             <HeroBadges />
           </div>
 
-          {/* Right Image — Model with cash */}
-          <div className="flex-shrink-0 mt-6 md:mt-0 flex justify-center md:justify-end relative z-10 md:pr-6 lg:pr-12">
-            <div className="translate-y-[10px] md:translate-y-[15px]">
+          {/* Hero Woman Image — sitting directly above the Download Button CTA */}
+          <div className="flex-shrink-0 mt-6 md:mt-0 flex justify-center md:justify-end relative z-10 md:pr-16 lg:pr-24 -translate-x-2 md:-translate-x-6">
+            <div className="translate-y-[15px] md:translate-y-[20px]">
               <img
                 src="/hero-woman.png"
-                alt="Mantri777 Lucky Cash Model"
-                className="w-[240px] sm:w-[300px] md:w-[340px] lg:w-[390px] object-contain drop-shadow-2xl animate-float-complex pointer-events-none select-none"
+                alt="Mantri777 Hero Woman"
+                className="w-[220px] sm:w-[270px] md:w-[310px] lg:w-[340px] object-contain drop-shadow-2xl animate-float-complex pointer-events-none"
               />
             </div>
           </div>
@@ -459,5 +500,6 @@ export default async function HomePage() {
         </div>
       </footer>
     </div>
+    </AppAdaptiveRoot>
   );
 }

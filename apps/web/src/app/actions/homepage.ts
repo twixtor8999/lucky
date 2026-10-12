@@ -1,17 +1,19 @@
 'use server';
 
-import { db, markets, results } from '@zenvora/shared/db';
+import { db, markets, marketSchedules, results } from '@zenvora/shared/db';
 import { desc } from 'drizzle-orm';
 import { parseSlotMinutes, getISTDateAndTime, getDailyTopWinners } from '@/lib/time-utils';
 
 export async function getLiveHomepageData() {
   const allMarkets = await db.select().from(markets);
+  const schedules = await db.select().from(marketSchedules);
   const allResults = await db.select().from(results).orderBy(desc(results.resultDate), desc(results.createdAt));
 
   const { dateStr, currentMinutes } = getISTDateAndTime();
 
   const formattedMarkets = allMarkets.map(market => {
     const latestResult = allResults.find(r => r.marketId === market.id);
+    const sched = schedules.find(s => s.marketId === market.id);
     const isStarline = market.name.toLowerCase().includes('starline');
     const isJackpot = market.name.toLowerCase().includes('jackpot');
     const isSpecial = isStarline || isJackpot;
@@ -45,6 +47,9 @@ export async function getLiveHomepageData() {
       isOpen = latestResult?.status === 'OPEN_PUBLISHED';
     }
 
+    const openTimeStr = sched ? sched.opensAt.slice(0, 5) : '09:00';
+    const closeTimeStr = sched ? sched.closesAt.slice(0, 5) : '12:00';
+
     return {
       id: market.id,
       name: market.name,
@@ -52,6 +57,8 @@ export async function getLiveHomepageData() {
       result: displayResult,
       isSpecial,
       isOpen,
+      openTime: openTimeStr,
+      closeTime: closeTimeStr,
     };
   });
 
