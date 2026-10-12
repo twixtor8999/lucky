@@ -27,23 +27,50 @@ export default function PlayMarketPage() {
   const [submitting, setSubmitting] = useState(false);
   const [showConfirmSheet, setShowConfirmSheet] = useState(false);
 
-  // Closing countdown timer simulation
-  const [timeLeft, setTimeLeft] = useState('00:24:18');
+  const isStarline = market?.name?.toLowerCase().includes('starline');
+  const isJackpot = market?.name?.toLowerCase().includes('jackpot');
+  const isSpecial = isStarline || isJackpot;
 
   useEffect(() => {
-    let seconds = 24 * 60 + 18;
-    const interval = setInterval(() => {
-      if (seconds <= 0) return;
-      seconds--;
-      const h = Math.floor(seconds / 3600);
-      const m = Math.floor((seconds % 3600) / 60);
-      const s = seconds % 60;
-      setTimeLeft(
-        `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-      );
-    }, 1000);
+    if (isJackpot && selectedType === BetTypeCode.SINGLE_ANK) {
+      setSelectedType(BetTypeCode.SINGLE_PATTI);
+    }
+  }, [isJackpot, selectedType]);
+
+  // Real closing countdown timer calculation
+  const [timeLeft, setTimeLeft] = useState('00:00:00');
+
+  useEffect(() => {
+    const updateCountdown = () => {
+      if (!market?.closeTime) {
+        setTimeLeft('00:00:00');
+        return;
+      }
+      const [ch, cm] = market.closeTime.split(':').map(Number);
+      const now = new Date();
+      // IST time:
+      const istOffsetMs = 5.5 * 60 * 60 * 1000;
+      const utcMs = now.getTime() + (now.getTimezoneOffset() * 60 * 1000);
+      const istDate = new Date(utcMs + istOffsetMs);
+
+      const targetDate = new Date(istDate);
+      targetDate.setHours(ch || 0, cm || 0, 0, 0);
+
+      const diffSec = Math.floor((targetDate.getTime() - istDate.getTime()) / 1000);
+      if (diffSec <= 0) {
+        setTimeLeft('CLOSED');
+      } else {
+        const h = Math.floor(diffSec / 3600);
+        const m = Math.floor((diffSec % 3600) / 60);
+        const s = diffSec % 60;
+        setTimeLeft(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+      }
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [market?.closeTime]);
 
   if (!market) {
     return (
@@ -156,26 +183,46 @@ export default function PlayMarketPage() {
 
       {/* Game Type Selector Chips */}
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-        {Object.values(BET_RULES).map((rule) => (
-          <button
-            key={rule.code}
-            onClick={() => {
-              audioHaptics.playTap();
-              setSelectedType(rule.code);
-            }}
-            className={`shrink-0 px-4 py-2.5 rounded-xl text-sm font-black border transition-all ${
-              selectedType === rule.code
-                ? 'bg-[#e42e2a] text-white border-[#e42e2a] shadow-md'
-                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 shadow-sm'
-            }`}
-          >
-            {rule.name}
-          </button>
-        ))}
+        {Object.values(BET_RULES)
+          .filter((rule) => {
+            if (isStarline) {
+              return [
+                BetTypeCode.SINGLE_ANK,
+                BetTypeCode.SINGLE_PATTI,
+                BetTypeCode.DOUBLE_PATTI,
+                BetTypeCode.TRIPLE_PATTI,
+              ].includes(rule.code);
+            }
+            if (isJackpot) {
+              return [
+                BetTypeCode.SINGLE_PATTI,
+                BetTypeCode.DOUBLE_PATTI,
+                BetTypeCode.TRIPLE_PATTI,
+                BetTypeCode.JODI,
+              ].includes(rule.code);
+            }
+            return true;
+          })
+          .map((rule) => (
+            <button
+              key={rule.code}
+              onClick={() => {
+                audioHaptics.playTap();
+                setSelectedType(rule.code);
+              }}
+              className={`shrink-0 px-4 py-2.5 rounded-xl text-sm font-black border transition-all ${
+                selectedType === rule.code
+                  ? 'bg-[#e42e2a] text-white border-[#e42e2a] shadow-md'
+                  : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 shadow-sm'
+              }`}
+            >
+              {rule.name}
+            </button>
+          ))}
       </div>
 
-      {/* Session Toggle (Only for Single Ank / Patti) */}
-      {selectedType === BetTypeCode.SINGLE_ANK && (
+      {/* Session Toggle (Only for Main Games with Open/Close Sessions) */}
+      {!isSpecial && selectedType === BetTypeCode.SINGLE_ANK && (
         <div className="flex gap-3">
           {(['OPEN', 'CLOSE'] as const).map((s) => (
             <button

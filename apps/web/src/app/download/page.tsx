@@ -18,10 +18,10 @@ export default function DownloadPage() {
 
       <div className="flex-1 flex flex-col items-center px-6 pt-12 text-center max-w-md mx-auto w-full">
         <div className="w-24 h-24 bg-gradient-to-br from-red-500 to-red-700 rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/30 mb-6">
-          <span className="text-white font-black text-5xl italic tracking-tighter">L</span>
+          <span className="text-white font-black text-5xl italic tracking-tighter">M</span>
         </div>
 
-        <h2 className="text-3xl font-black tracking-tight mb-2">Lucky777 App</h2>
+        <h2 className="text-3xl font-black tracking-tight mb-2">Mantri777 App</h2>
         <p className="text-gray-500 font-medium text-sm mb-8">
           The fastest and most secure way to play. Download the official Android APK now.
         </p>

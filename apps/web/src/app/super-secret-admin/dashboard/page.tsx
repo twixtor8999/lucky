@@ -7,13 +7,15 @@ import MarketManagementTab from '@/components/admin/MarketManagementTab';
 import PendingPayoutsTab from '@/components/admin/PendingPayoutsTab';
 import WithdrawalsTab from '@/components/admin/WithdrawalsTab';
 import SystemSettingsTab from '@/components/admin/SystemSettingsTab';
-import { Users, CreditCard, History, Trophy, Settings, ArrowRightLeft } from 'lucide-react';
+import BidsExposureTab from '@/components/admin/BidsExposureTab';
+import { Users, CreditCard, History, Trophy, Settings, ArrowRightLeft, Layers } from 'lucide-react';
 
 export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState('users');
 
   const tabs = [
     { id: 'users', name: 'Users & Bonuses', icon: Users },
+    { id: 'bids', name: 'User Bets & Exposure', icon: Layers },
     { id: 'deposits', name: 'Deposit Requests', icon: ArrowRightLeft },
     { id: 'results', name: 'Market Management', icon: History },
     { id: 'payouts', name: 'Pending Payouts', icon: Trophy },
@@ -48,6 +50,8 @@ export default function AdminDashboardPage() {
       {/* Tab Content */}
       {activeTab === 'users' ? (
         <UsersTab />
+      ) : activeTab === 'bids' ? (
+        <BidsExposureTab />
       ) : activeTab === 'deposits' ? (
         <DepositsTab />
       ) : activeTab === 'results' ? (

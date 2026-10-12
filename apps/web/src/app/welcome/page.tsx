@@ -44,7 +44,7 @@ export default function WelcomePage() {
         </div>
         <span className="text-xs font-bold uppercase tracking-widest text-gold-400">Account Activated</span>
         <h1 className="text-3xl font-display font-extrabold text-gray-100 tracking-tight mt-1">
-          Welcome to <span className="gold-gradient-text">Lucky 777</span>!
+          Welcome to <span className="gold-gradient-text">Mantri777</span>!
         </h1>
         <p className="text-xs text-gray-400 mt-2 max-w-xs">
           Your account is fully secured. We have a special sign-up reward waiting for you.

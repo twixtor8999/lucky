@@ -4,23 +4,24 @@ import Link from 'next/link';
 import { Download, HelpCircle, Phone, MessageCircle, ChevronDown } from 'lucide-react';
 import StickyDownloadBar from '@/components/StickyDownloadBar';
 import HeroBadges from '@/components/HeroBadges';
+import LiveGamesSection from '@/components/LiveGamesSection';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function HomePage() {
-  const { mainGames: games, starlineGames, jackpotGames } = await getLiveHomepageData();
+  const { mainGames: games, starlineGames, jackpotGames, topWinners } = await getLiveHomepageData();
 
   const faqs = [
-    { q: "What is Lucky777 and what does it provide for satta matka players?", a: "Lucky777 is a premium platform dedicated to providing the fastest and most accurate satta matka results, charts, and guessing forums for players across India." },
-    { q: "How does Lucky777 verify the satta matka result before posting it?", a: "We have a dedicated team that verifies results directly from the core markets. Multiple independent sources are cross-checked before any result is published to ensure 100% accuracy." },
-    { q: "What is the satta matka live feed on Lucky777 and which markets does it cover?", a: "Our live feed updates in real-time as soon as the market opens or closes. We cover all major markets including Kalyan, Milan, Rajdhani, Main Bazar, Time Bazar, and many more." },
-    { q: "How does the satta matka chart on Lucky777 support research?", a: "Our comprehensive Jodi and Pana charts keep historical records dating back years. Players can analyze previous patterns and trends to formulate their own strategies." },
-    { q: "What is evidence-based satta matka guessing on Lucky777?", a: "Instead of blind guessing, evidence-based guessing involves using mathematical probabilities and historical chart patterns to predict upcoming numbers, which our community actively discusses." },
-    { q: "What is the satta matka open and why do researchers track it on Lucky777?", a: "The 'open' is the first set of numbers declared in a market. Researchers track it closely as it forms the basis for predicting the subsequent 'close' numbers." },
+    { q: "What is Mantri777 and what does it provide for satta matka players?", a: "Mantri777 is a premium platform dedicated to providing the fastest and most accurate satta matka results, charts, and guessing forums for players across India." },
+    { q: "How does Mantri777 verify the satta matka result before posting it?", a: "We have a dedicated team that verifies results directly from the core markets. Multiple independent sources are cross-checked before any result is published to ensure 100% accuracy." },
+    { q: "What is the satta matka live feed on Mantri777 and which markets does it cover?", a: "Our live feed updates in real-time as soon as the market opens or closes. We cover all major markets including Kalyan, Milan, Rajdhani, Main Bazar, Time Bazar, and many more." },
+    { q: "How does the satta matka chart on Mantri777 support research?", a: "Our comprehensive Jodi and Pana charts keep historical records dating back years. Players can analyze previous patterns and trends to formulate their own strategies." },
+    { q: "What is evidence-based satta matka guessing on Mantri777?", a: "Instead of blind guessing, evidence-based guessing involves using mathematical probabilities and historical chart patterns to predict upcoming numbers, which our community actively discusses." },
+    { q: "What is the satta matka open and why do researchers track it on Mantri777?", a: "The 'open' is the first set of numbers declared in a market. Researchers track it closely as it forms the basis for predicting the subsequent 'close' numbers." },
     { q: "What does satka matka satta mean and is it the same as satta matka?", a: "Yes, 'satka matka' is just a common regional mispronunciation and spelling variation of 'satta matka'. They refer to the exact same game." },
-    { q: "How deep are the satta matka chart archives on Lucky777?", a: "Our archives are extremely deep, containing complete daily records for major markets spanning several years, allowing for extensive data analysis." },
-    { q: "Is Lucky777 free to use for satta matka results and charts?", a: "Yes, viewing live results, historical charts, and reading community guessing is completely free for all users on our platform." },
+    { q: "How deep are the satta matka chart archives on Mantri777?", a: "Our archives are extremely deep, containing complete daily records for major markets spanning several years, allowing for extensive data analysis." },
+    { q: "Is Mantri777 free to use for satta matka results and charts?", a: "Yes, viewing live results, historical charts, and reading community guessing is completely free for all users on our platform." },
   ];
 
   const marketList = [
@@ -43,9 +44,9 @@ export default async function HomePage() {
           {/* Logo Area */}
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-sm">
-              <span className="font-black text-white text-xl font-sans">L</span>
+              <span className="font-black text-white text-xl font-sans">M</span>
             </div>
-            <span className="font-sans font-black text-2xl italic tracking-tighter">LUCKY777</span>
+            <span className="font-sans font-black text-2xl italic tracking-tighter">MANTRI777</span>
           </div>
 
           {/* Desktop Navigation Links */}
@@ -167,7 +168,7 @@ export default async function HomePage() {
             </div>
 
             <h1 className="text-7xl sm:text-[90px] leading-[1] font-black text-[#e42e2a] italic tracking-[-0.04em] mb-1" style={{ textShadow: '2px 2px 0px rgba(255,255,255,0.8)' }}>
-              LUCKY777
+              MANTRI777
             </h1>
 
             <h2 className="text-[42px] sm:text-[54px] leading-[1.1] font-black text-[#e42e2a] italic" style={{ textShadow: '2px 2px 0px rgba(255,255,255,0.8)' }}>
@@ -287,28 +288,7 @@ export default async function HomePage() {
             `}} />
 
             <div className="animate-marquee gap-4 pr-4">
-              {[
-                { rank: 1, name: "Rahul Sharma", amount: 98540 },
-                { rank: 2, name: "Priya Patel", amount: 84210 },
-                { rank: 3, name: "Rekha Kumari", amount: 65957 },
-                { rank: 4, name: "Imran Shaikh", amount: 60304 },
-                { rank: 5, name: "Komal More", amount: 51672 },
-                { rank: 6, name: "Nilesh Mehta", amount: 51652 },
-                { rank: 7, name: "Pratap Rajput", amount: 45616 },
-                { rank: 8, name: "Krupa Vyas", amount: 42167 },
-                { rank: 9, name: "Amit Singh", amount: 38400 },
-                { rank: 10, name: "Neha Gupta", amount: 35200 },
-                { rank: 1, name: "Rahul Sharma", amount: 98540 },
-                { rank: 2, name: "Priya Patel", amount: 84210 },
-                { rank: 3, name: "Rekha Kumari", amount: 65957 },
-                { rank: 4, name: "Imran Shaikh", amount: 60304 },
-                { rank: 5, name: "Komal More", amount: 51672 },
-                { rank: 6, name: "Nilesh Mehta", amount: 51652 },
-                { rank: 7, name: "Pratap Rajput", amount: 45616 },
-                { rank: 8, name: "Krupa Vyas", amount: 42167 },
-                { rank: 9, name: "Amit Singh", amount: 38400 },
-                { rank: 10, name: "Neha Gupta", amount: 35200 },
-              ].map((winner, i) => (
+              {[...topWinners, ...topWinners].map((winner, i) => (
                 <div key={i} className="min-w-[160px] md:min-w-[180px] bg-white border border-gray-200 rounded-[10px] p-3 shadow-sm flex flex-col justify-center shrink-0">
                   <div className="flex items-center gap-1.5 mb-2">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px] text-[#e42e2a]">
@@ -317,7 +297,7 @@ export default async function HomePage() {
                     <span className="text-xs font-black text-gray-800">{winner.rank}</span>
                   </div>
                   <div className="text-[13px] font-black text-[#111] leading-tight mb-0.5">{winner.name}</div>
-                  <div className="text-sm font-black text-[#e42e2a]">₹{winner.amount}</div>
+                  <div className="text-sm font-black text-[#e42e2a]">₹{winner.amount.toLocaleString('en-IN')}</div>
                 </div>
               ))}
             </div>
@@ -354,130 +334,13 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 8. Best Games For You */}
-      <section className="w-full py-8 mx-auto relative z-10 bg-white">
-        <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-[28px] md:text-[34px] font-black text-[#111] tracking-tight mb-6">
-            Best Games for You
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {games.map((market: any) => (
-              <div key={market.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col hover:shadow-md hover:border-gray-300 transition-all duration-200">
-                <div className="p-4 flex justify-between items-start">
-                  <div>
-                    <div className="flex items-center gap-1 mb-1">
-                      <h3 className="text-[17px] md:text-[19px] font-black text-[#de302a] tracking-wide">{market.name}</h3>
-                      <HelpCircle className="w-3.5 h-3.5 text-[#de302a]" />
-                    </div>
-                    <div className="text-[20px] md:text-[22px] font-black tracking-widest text-[#111]">
-                      {market.result}
-                    </div>
-                  </div>
-                  {market.isOpen ? (
-                    <Link
-                      href={`/markets/${market.slug}/play`}
-                      className="bg-[#de302a] hover:bg-[#c92424] transition-all transform active:scale-95 text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1 shadow-sm"
-                    >
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                      Play
-                    </Link>
-                  ) : (
-                    <button disabled className="bg-gray-300 text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1 cursor-not-allowed">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                      Play
-                    </button>
-                  )}
-                </div>
-                <div className="w-full h-px bg-gray-100"></div>
-                <div className="p-3 px-4 flex justify-between">
-                  <button className="border border-[#de302a] text-[#de302a] hover:bg-[#de302a] hover:text-white transition-colors rounded-full px-4 py-1 text-[11px] font-bold">Jodi Chart</button>
-                  <button className="border border-[#de302a] text-[#de302a] hover:bg-[#de302a] hover:text-white transition-colors rounded-full px-4 py-1 text-[11px] font-bold">Pana Chart</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* 8, 9, 10. Live Synced Games (Main, Starline, Jackpot) */}
+      <LiveGamesSection 
+        initialMainGames={games} 
+        initialStarlineGames={starlineGames} 
+        initialJackpotGames={jackpotGames} 
+      />
 
-      {/* 9. Starline Games */}
-      <section className="w-full py-8 mx-auto relative z-10 bg-white">
-        <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-[28px] md:text-[34px] font-black text-[#111] tracking-tight mb-6">Starline Games</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {starlineGames.map((market: any) => (
-              <div key={market.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col hover:shadow-md hover:border-gray-300 transition-all duration-200">
-                <div className="p-4 flex justify-between items-start">
-                  <div>
-                    <div className="flex items-center gap-1 mb-1">
-                      <h3 className="text-[17px] md:text-[19px] font-black text-[#de302a] tracking-wide">{market.name}</h3>
-                      <HelpCircle className="w-3.5 h-3.5 text-[#de302a]" />
-                    </div>
-                    <div className="text-[20px] md:text-[22px] font-black tracking-widest text-[#111]">{market.result}</div>
-                  </div>
-                  {market.isOpen ? (
-                    <Link
-                      href={`/markets/${market.slug}/play`}
-                      className="bg-[#de302a] hover:bg-[#c92424] transition-all transform active:scale-95 text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1 shadow-sm"
-                    >
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                      Play
-                    </Link>
-                  ) : (
-                    <button disabled className="bg-gray-300 text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1 cursor-not-allowed">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                      Play
-                    </button>
-                  )}
-                </div>
-                <div className="w-full h-px bg-gray-100"></div>
-                <div className="p-3 px-4 flex justify-start">
-                  <button className="border border-[#de302a] text-[#de302a] hover:bg-[#de302a] hover:text-white transition-colors rounded-full px-4 py-1 text-[11px] font-bold">Pana Chart</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 10. Jackpot Games */}
-      <section className="w-full py-8 mx-auto relative z-10 bg-white">
-        <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-[28px] md:text-[34px] font-black text-[#111] tracking-tight mb-6">Jackpot Games</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {jackpotGames.map((market: any) => (
-              <div key={market.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col hover:shadow-md hover:border-gray-300 transition-all duration-200">
-                <div className="p-4 flex justify-between items-start">
-                  <div>
-                    <div className="flex items-center gap-1 mb-1">
-                      <h3 className="text-[17px] md:text-[19px] font-black text-[#de302a] tracking-wide">{market.name}</h3>
-                      <HelpCircle className="w-3.5 h-3.5 text-[#de302a]" />
-                    </div>
-                    <div className="text-[20px] md:text-[22px] font-black tracking-widest text-[#111]">{market.result}</div>
-                  </div>
-                  {market.isOpen ? (
-                    <Link
-                      href={`/markets/${market.slug}/play`}
-                      className="bg-[#de302a] hover:bg-[#c92424] transition-all transform active:scale-95 text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1 shadow-sm"
-                    >
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                      Play
-                    </Link>
-                  ) : (
-                    <button disabled className="bg-gray-300 text-white rounded-full px-4 py-1.5 text-[12px] font-bold flex items-center gap-1 mt-1 cursor-not-allowed">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                      Play
-                    </button>
-                  )}
-                </div>
-                <div className="w-full h-px bg-gray-100"></div>
-                <div className="p-3 px-4 flex justify-start">
-                  <button className="border border-[#de302a] text-[#de302a] hover:bg-[#de302a] hover:text-white transition-colors rounded-full px-4 py-1 text-[11px] font-bold">Jodi Chart</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* SEO Text Block */}
       <section className="w-full bg-white pb-8 px-4">
@@ -486,7 +349,7 @@ export default async function HomePage() {
             Satta Matka Chart Today - Jodi & Panel Chart Updated Old Records
           </h2>
           <p className="text-gray-600 text-sm md:text-[15px] leading-relaxed">
-            Lucky777 brings the satta matka community a platform built entirely around one principle: every player deserves data they can trust and rely on for accurate results.
+            Mantri777 brings the satta matka community a platform built entirely around one principle: every player deserves data they can trust and rely on for accurate results.
           </p>
         </div>
       </section>
@@ -562,9 +425,9 @@ export default async function HomePage() {
         <div className="max-w-6xl mx-auto px-4 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-sm">
-              <span className="font-black text-white text-2xl font-sans">L</span>
+              <span className="font-black text-white text-2xl font-sans">M</span>
             </div>
-            <span className="font-sans font-black text-3xl italic tracking-tighter text-white">LUCKY777</span>
+            <span className="font-sans font-black text-3xl italic tracking-tighter text-white">MANTRI777</span>
           </div>
 
           <div className="flex flex-col items-start max-w-xs">
@@ -581,7 +444,7 @@ export default async function HomePage() {
         </div>
 
         <div className="text-center text-[12px] text-gray-600 mt-12">
-          Copyright © 2026 Lucky 777. All rights reserved.
+          Copyright © 2026 Mantri777. All rights reserved.
         </div>
       </footer>
     </div>

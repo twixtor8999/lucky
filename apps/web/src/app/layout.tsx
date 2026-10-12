@@ -3,8 +3,8 @@ import "./globals.css";
 import ClientWrapper from "@/components/layout/ClientWrapper";
 
 export const metadata: Metadata = {
-  title: "Lucky 777 - India's No.1 Satta Matka App",
-  description: "Lucky777 - Live Satta Matka results, charts, and trusted gaming platform. Free ₹100 Welcome Bonus. Download APK now.",
+  title: "Mantri777 - India's No.1 Satta Matka App",
+  description: "Mantri777 - Live Satta Matka results, charts, and trusted gaming platform. Free ₹100 Welcome Bonus. Download APK now.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Lucky 777",
+    title: "Mantri777",
   },
 };
 

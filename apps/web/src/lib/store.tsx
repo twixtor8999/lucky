@@ -176,7 +176,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {}
 
-    // Seed and load markets globally once
+    // Seed and load markets globally with 8-second live sync
     seedMarketsAction().then(() => {
       getMarketsAction().then(res => {
         if (res.success && res.markets) {
@@ -184,6 +184,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       });
     });
+
+    const marketSyncInterval = setInterval(() => {
+      getMarketsAction().then(res => {
+        if (res.success && res.markets) {
+          setMarkets(res.markets);
+        }
+      });
+    }, 8000);
+
+    return () => clearInterval(marketSyncInterval);
   }, []);
 
   // Fetch Authoritative Wallet and Transactions from server

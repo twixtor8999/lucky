@@ -39,7 +39,7 @@ class ProductionOtpProvider implements OtpProvider {
         },
         body: JSON.stringify({
           route: 'q',
-          message: `Your Lucky777 login OTP is ${otp}. Please do not share this with anyone.`,
+          message: `Your Mantri777 login OTP is ${otp}. Please do not share this with anyone.`,
           language: 'english',
           flash: 0,
           numbers: phone

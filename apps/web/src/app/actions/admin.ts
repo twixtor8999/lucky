@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-import { db, appSettings, users, wallets, transactions, ledgerEntries, deposits, markets, results, notifications } from '@zenvora/shared/db';
+import { db, appSettings, users, wallets, transactions, ledgerEntries, deposits, markets, results, notifications, bets } from '@zenvora/shared/db';
 import { eq, and, desc } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { getServerSession } from '../../lib/session';
@@ -548,4 +548,129 @@ export async function publishSingleResult(
   } catch (error: any) {
     return { success: false, error: error.message };
   }
+}
+
+function getMarketCategoryHelper(name: string): 'main' | 'starline' | 'jackpot' {
+  const n = name.toLowerCase();
+  if (n.includes('starline')) return 'starline';
+  if (n.includes('jackpot')) return 'jackpot';
+  return 'main';
+}
+
+export async function getAdminBidsData() {
+  const authCookie = cookies().get('admin_auth');
+  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+
+  const allMarkets = await db.select().from(markets);
+  const marketsWithCategory = allMarkets.map(m => ({
+    id: m.id,
+    name: m.name,
+    slug: m.slug,
+    category: getMarketCategoryHelper(m.name),
+  }));
+
+  const allBets = await db.select({
+    id: bets.id,
+    userId: bets.userId,
+    marketId: bets.marketId,
+    betTypeCode: bets.betTypeCode,
+    selection: bets.selection,
+    session: bets.session,
+    amountMinor: bets.amountMinor,
+    status: bets.status,
+    placedAt: bets.placedAt,
+    userPhone: users.phone,
+    marketName: markets.name,
+  })
+  .from(bets)
+  .leftJoin(users, eq(bets.userId, users.id))
+  .leftJoin(markets, eq(bets.marketId, markets.id))
+  .orderBy(desc(bets.placedAt));
+
+  const formattedBets = allBets.map(b => {
+    const marketName = b.marketName || 'Unknown Market';
+    const category = getMarketCategoryHelper(marketName);
+    return {
+      id: b.id,
+      userId: b.userId,
+      userPhone: b.userPhone || 'Anonymous',
+      marketId: b.marketId,
+      marketName,
+      category,
+      betTypeCode: b.betTypeCode,
+      selection: b.selection,
+      session: b.session || 'OPEN',
+      amount: Number(b.amountMinor),
+      status: b.status,
+      placedAt: b.placedAt ? new Date(b.placedAt).toISOString() : new Date().toISOString(),
+    };
+  });
+
+  return {
+    success: true,
+    markets: marketsWithCategory,
+    bets: formattedBets,
+  };
+}
+
+export async function seedDemoBidsAction() {
+  const authCookie = cookies().get('admin_auth');
+  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+
+  const allUsers = await db.select().from(users).limit(5);
+  const allMarkets = await db.select().from(markets);
+
+  if (allUsers.length === 0 || allMarkets.length === 0) {
+    return { success: false, error: 'Users or markets not found' };
+  }
+
+  const mainMarkets = allMarkets.filter(m => getMarketCategoryHelper(m.name) === 'main');
+  const starlineMarkets = allMarkets.filter(m => getMarketCategoryHelper(m.name) === 'starline');
+  const jackpotMarkets = allMarkets.filter(m => getMarketCategoryHelper(m.name) === 'jackpot');
+
+  const targetMain = mainMarkets[0] || allMarkets[0];
+  const targetStarline = starlineMarkets[0] || allMarkets[0];
+  const targetJackpot = jackpotMarkets[0] || allMarkets[0];
+
+  const sampleBids = [
+    // Main market bids
+    { market: targetMain, type: 'SINGLE_ANK', selection: '7', session: 'OPEN', amount: 200 },
+    { market: targetMain, type: 'SINGLE_ANK', selection: '7', session: 'OPEN', amount: 500 },
+    { market: targetMain, type: 'SINGLE_ANK', selection: '3', session: 'OPEN', amount: 100 },
+    { market: targetMain, type: 'SINGLE_ANK', selection: '8', session: 'CLOSE', amount: 300 },
+    { market: targetMain, type: 'JODI', selection: '74', session: 'OPEN', amount: 150 },
+    { market: targetMain, type: 'SINGLE_PATTI', selection: '179', session: 'OPEN', amount: 50 },
+    
+    // Starline bids
+    { market: targetStarline, type: 'SINGLE_ANK', selection: '9', session: 'OPEN', amount: 400 },
+    { market: targetStarline, type: 'SINGLE_ANK', selection: '9', session: 'OPEN', amount: 200 },
+    { market: targetStarline, type: 'SINGLE_ANK', selection: '2', session: 'OPEN', amount: 100 },
+    { market: targetStarline, type: 'SINGLE_PATTI', selection: '450', session: 'OPEN', amount: 100 },
+
+    // Jackpot bids
+    { market: targetJackpot, type: 'SINGLE_PATTI', selection: '789', session: 'OPEN', amount: 250 },
+    { market: targetJackpot, type: 'SINGLE_PATTI', selection: '789', session: 'OPEN', amount: 500 },
+    { market: targetJackpot, type: 'SINGLE_PATTI', selection: '345', session: 'OPEN', amount: 100 },
+    { market: targetJackpot, type: 'TRIPLE_PATTI', selection: '777', session: 'OPEN', amount: 150 },
+  ];
+
+  for (let i = 0; i < sampleBids.length; i++) {
+    const item = sampleBids[i];
+    const user = allUsers[i % allUsers.length];
+
+    await db.insert(bets).values({
+      userId: user.id,
+      marketId: item.market.id,
+      betTypeCode: item.type,
+      selection: item.selection,
+      session: item.session,
+      amountMinor: item.amount,
+      status: 'ACTIVE',
+      idempotencyKey: `demo-bid-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 7)}`,
+      placedAt: new Date(Date.now() - (i * 15 * 60 * 1000)),
+    });
+  }
+
+  revalidatePath('/super-secret-admin/dashboard');
+  return { success: true, count: sampleBids.length };
 }

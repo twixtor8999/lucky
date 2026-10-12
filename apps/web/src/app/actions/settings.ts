@@ -84,7 +84,7 @@ export async function getPublicSettings() {
     return {
       supportNumber: appSet?.supportNumber || sysSet?.supportWhatsapp || '+919380347013',
       ownerUpiId: appSet?.upiId || sysSet?.ownerUpiId || 'owner@upi',
-      ownerName: sysSet?.ownerName || 'Lucky 777',
+      ownerName: sysSet?.ownerName || 'Mantri777',
       upiQrCodeUrl: appSet?.upiQrCodeUrl || '',
       welcomeBonusAmount: appSet?.welcomeBonusAmount || 100,
       minDepositAmount: appSet?.minDepositAmount || 100,
@@ -96,7 +96,7 @@ export async function getPublicSettings() {
     return {
       supportNumber: '+919380347013',
       ownerUpiId: 'owner@upi',
-      ownerName: 'Lucky 777',
+      ownerName: 'Mantri777',
       upiQrCodeUrl: '',
       welcomeBonusAmount: 100,
       minDepositAmount: 100,

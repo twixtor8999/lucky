@@ -38,19 +38,45 @@ export async function seedMarketsAction() {
   return { success: true, message: 'Seeded' };
 }
 
+import { getISTDateAndTime, parseSlotMinutes } from '@/lib/time-utils';
+
 export async function getMarketsAction() {
   const allMarkets = await db.select().from(markets).orderBy(asc(markets.name));
   const schedules = await db.select().from(marketSchedules);
   const allResults = await db.select().from(results).orderBy(desc(results.resultDate), desc(results.createdAt));
 
-  const now = new Date();
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
-  const currentTime = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}:00`;
+  const { dateStr, currentMinutes, currentTime } = getISTDateAndTime();
 
   const result: Market[] = allMarkets.map(m => {
     const sched = schedules.find(s => s.marketId === m.id);
     const latestRes = allResults.find(r => r.marketId === m.id);
+    const isStarline = m.name.toLowerCase().includes('starline');
+    const isJackpot = m.name.toLowerCase().includes('jackpot');
+    const isSpecial = isStarline || isJackpot;
+
+    if (isSpecial) {
+      const slotMinutes = parseSlotMinutes(m.name);
+      const isTodayPublished = latestRes && latestRes.resultDate === dateStr && latestRes.status === 'PUBLISHED';
+      const isOpenNow = !isTodayPublished;
+      const slotTimeStr = slotMinutes !== null 
+        ? `${String(Math.floor(slotMinutes / 60)).padStart(2, '0')}:${String(slotMinutes % 60).padStart(2, '0')}:00` 
+        : '23:59:00';
+
+      return {
+        id: m.id,
+        name: m.name,
+        slug: m.slug,
+        status: isOpenNow ? MarketStatus.OPEN : MarketStatus.CLOSED,
+        description: m.description || '',
+        openTime: '00:00:00', // Midnight open
+        closeTime: slotTimeStr, // Closes at slot cutoff
+        resultTime: slotTimeStr,
+        isOpenToday: true,
+        currentOpenTime: '00:00:00',
+        currentCloseTime: slotTimeStr,
+      };
+    }
+
     const isOpenedByAdmin = latestRes?.status === 'OPEN_PUBLISHED';
     const isFullyClosed = latestRes?.status === 'PUBLISHED';
 
