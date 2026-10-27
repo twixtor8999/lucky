@@ -260,21 +260,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const requestOtp = async (phone: string) => {
     const result = await requestOtpAction(phone);
     if (!result.success) {
-      showToast('error', 'Error', result.message || 'Failed to request OTP');
+      showToast('error', 'Error', result.message || 'Failed to request code');
       return { success: false, message: result.message };
     }
 
-    setActiveOtpCode(null);
+    const code = (result as any).code || null;
+    setActiveOtpCode(code);
     setLastPhoneAttempted(phone);
     audioHaptics.playTap();
 
     showToast(
-      'info',
-      'OTP Sent via SMS',
-      `Please check your mobile number (+91 ${phone}) for the OTP.`
+      'success',
+      'Verification Code Ready',
+      `Your security code is ${code}`
     );
 
-    return { success: true };
+    return { success: true, code };
   };
 
   // Auth: Verify OTP

@@ -61,7 +61,7 @@ export default function MobileAppView({
   initialJackpotGames,
 }: MobileAppViewProps) {
   const router = useRouter();
-  const { user, wallet, isAuthenticated, logout, showToast, requestOtp, verifyOtp, setupMpin, loginWithMpin } = useApp();
+  const { user, wallet, isAuthenticated, logout, showToast, requestOtp, verifyOtp, setupMpin, loginWithMpin, activeOtpCode } = useApp();
 
   // App Navigation & Drawer State
   const [activeTab, setActiveTab] = useState<'main' | 'starline' | 'jackpot'>('main');
@@ -74,6 +74,7 @@ export default function MobileAppView({
   const [appScreen, setAppScreen] = useState<'splash' | 'phone' | 'otp' | 'set_mpin' | 'mpin_login' | 'dashboard'>('splash');
   const [phoneInput, setPhoneInput] = useState('');
   const [otpInput, setOtpInput] = useState('');
+  const [generatedScreenCode, setGeneratedScreenCode] = useState('');
   const [mpinInput, setMpinInput] = useState('');
   const [confirmMpinInput, setConfirmMpinInput] = useState('');
   const [loginMpinInput, setLoginMpinInput] = useState('');
@@ -122,7 +123,7 @@ export default function MobileAppView({
     return () => clearTimeout(timer);
   }, [isAuthenticated, user]);
 
-  // Auth Step 1: Request OTP
+  // Auth Step 1: Request Security Verification Code
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (phoneInput.length !== 10) {
@@ -133,18 +134,21 @@ export default function MobileAppView({
     const res = await requestOtp(phoneInput);
     setAuthLoading(false);
     if (res.success) {
+      const code = (res as any).code || '';
+      if (code) {
+        setGeneratedScreenCode(code);
+      }
       setAppScreen('otp');
-      showToast('info', 'OTP Sent', `OTP sent to +91 ${phoneInput}`);
     } else {
-      showToast('error', 'Error', res.message || 'Failed to send OTP');
+      showToast('error', 'Error', res.message || 'Failed to generate verification code');
     }
   };
 
-  // Auth Step 2: Verify OTP
+  // Auth Step 2: Verify Code
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otpInput.length !== 6) {
-      showToast('error', 'Invalid OTP', 'Please enter 6-digit OTP');
+    if (otpInput.length < 4) {
+      showToast('error', 'Invalid Code', 'Please enter the verification code');
       return;
     }
     setAuthLoading(true);
@@ -158,7 +162,7 @@ export default function MobileAppView({
         setAppScreen('dashboard');
       }
     } else {
-      showToast('error', 'Verification Failed', 'Incorrect OTP');
+      showToast('error', 'Verification Failed', 'Incorrect code. Please enter the code shown on your screen.');
     }
   };
 
@@ -245,8 +249,8 @@ export default function MobileAppView({
           {appScreen === 'phone' ? (
             <form onSubmit={handleRequestOtp} className="space-y-4">
               <div className="text-center mb-6">
-                <h3 className="text-lg font-black text-gray-900">Mobile Login</h3>
-                <p className="text-xs text-gray-500 mt-1">Enter your 10-digit mobile number to get OTP</p>
+                <h3 className="text-lg font-black text-gray-900">Instant Login</h3>
+                <p className="text-xs text-gray-500 mt-1">Enter your 10-digit mobile number to proceed</p>
               </div>
 
               <div>
@@ -255,6 +259,7 @@ export default function MobileAppView({
                   <span className="text-sm font-black text-gray-700 mr-2 border-r border-gray-300 pr-2">+91</span>
                   <input
                     type="tel"
+                    inputMode="numeric"
                     maxLength={10}
                     placeholder="9876543210"
                     value={phoneInput}
@@ -270,32 +275,63 @@ export default function MobileAppView({
                 disabled={phoneInput.length !== 10 || authLoading}
                 className="w-full py-3.5 rounded-2xl bg-[#e22e28] hover:bg-[#c92424] active:scale-[0.98] transition-all text-white font-black text-sm uppercase tracking-wider shadow-lg shadow-red-500/25 disabled:opacity-50 disabled:pointer-events-none mt-2"
               >
-                {authLoading ? 'Sending OTP...' : 'Get OTP'}
+                {authLoading ? 'Generating Code...' : 'Continue'}
               </button>
             </form>
           ) : (
             <form onSubmit={handleVerifyOtp} className="space-y-4">
-              <div className="text-center mb-6">
-                <h3 className="text-lg font-black text-gray-900">Enter OTP</h3>
-                <p className="text-xs text-gray-500 mt-1">Sent to +91 {phoneInput}</p>
+              <div className="text-center mb-3">
+                <h3 className="text-lg font-black text-gray-900">Security Verification</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Phone: +91 {phoneInput}</p>
+              </div>
+
+              {/* Unique On-Screen Security Code Display */}
+              <div className="bg-gradient-to-br from-red-50 via-white to-red-50/40 border-2 border-red-200 rounded-2xl p-4 text-center shadow-sm relative overflow-hidden">
+                <div className="text-[10px] font-black text-[#e22e28] uppercase tracking-widest mb-1.5 flex items-center justify-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#e22e28] animate-ping" />
+                  Your Verification Code
+                </div>
+                <div className="flex items-center justify-center py-1">
+                  <span className="font-mono text-3xl font-black text-gray-900 tracking-[0.3em] pl-3 select-all bg-white px-4 py-1.5 rounded-xl border border-red-100 shadow-inner">
+                    {generatedScreenCode || activeOtpCode || '••••'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-gray-500 mt-2 font-medium">
+                  Enter the code above to verify your session
+                </p>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-600 uppercase tracking-wider block mb-1 text-center">6-Digit Code</label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   maxLength={6}
-                  placeholder="• • • • • •"
+                  placeholder="Enter Code"
                   value={otpInput}
                   onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
-                  className="w-full text-center tracking-[0.5em] text-2xl font-black rounded-2xl border-2 border-gray-200 focus:border-[#e22e28] py-3 bg-gray-50/50 focus:outline-none"
+                  className="w-full text-center tracking-[0.3em] text-2xl font-black rounded-2xl border-2 border-gray-200 focus:border-[#e22e28] py-3 bg-gray-50/50 focus:outline-none"
                   autoFocus
                 />
               </div>
 
+              {/* 1-Tap Quick Auto-fill button */}
+              {(generatedScreenCode || activeOtpCode) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const c = generatedScreenCode || activeOtpCode || '';
+                    setOtpInput(c);
+                    audioHaptics.playTap();
+                  }}
+                  className="w-full py-2 bg-red-50 hover:bg-red-100 text-[#e22e28] rounded-xl text-xs font-black tracking-wide transition-all border border-red-200/60 flex items-center justify-center gap-1.5"
+                >
+                  <span>⚡ 1-Tap Auto-Fill ({generatedScreenCode || activeOtpCode})</span>
+                </button>
+              )}
+
               <button
                 type="submit"
-                disabled={otpInput.length !== 6 || authLoading}
+                disabled={otpInput.length < 4 || authLoading}
                 className="w-full py-3.5 rounded-2xl bg-[#e22e28] hover:bg-[#c92424] active:scale-[0.98] transition-all text-white font-black text-sm uppercase tracking-wider shadow-lg shadow-red-500/25 disabled:opacity-50 disabled:pointer-events-none"
               >
                 {authLoading ? 'Verifying...' : 'Verify & Continue'}
@@ -304,7 +340,7 @@ export default function MobileAppView({
               <button
                 type="button"
                 onClick={() => setAppScreen('phone')}
-                className="w-full text-xs font-bold text-gray-500 hover:text-[#e22e28] text-center pt-2"
+                className="w-full text-xs font-bold text-gray-500 hover:text-[#e22e28] text-center pt-1"
               >
                 Change mobile number
               </button>

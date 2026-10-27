@@ -111,15 +111,16 @@ function OtpContent() {
           ))}
         </div>
 
-        {/* Quick test autofill pill */}
+        {/* Live on-screen security verification code pill */}
         <div className="mb-6 flex justify-center">
           <button
             type="button"
             onClick={autoFillTestOtp}
-            className="text-[11px] bg-red-50 border border-red-100 text-red-600 px-3 py-1.5 rounded-full hover:bg-red-100 transition-colors flex items-center gap-1.5 font-semibold"
+            className="text-[12px] bg-red-50 border border-red-200 text-[#e42e2a] px-4 py-2 rounded-xl hover:bg-red-100 transition-colors flex items-center gap-2 font-bold shadow-sm"
           >
-            <span>Auto-fill Demo Code:</span>
-            <span className="font-mono font-bold text-[#e42e2a]">774422</span>
+            <span>⚡ Security Code:</span>
+            <span className="font-mono font-black text-base tracking-wider">{activeOtpCode || '••••'}</span>
+            <span className="text-[10px] text-gray-500 font-normal">(Tap to Auto-fill)</span>
           </button>
         </div>
 

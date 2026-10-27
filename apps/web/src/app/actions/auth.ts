@@ -10,103 +10,28 @@ import { z } from 'zod';
 import { checkRateLimit, getClientIp } from '../../lib/rateLimit';
 import { writeAuditLog } from '../../lib/audit';
 
-// OTP Provider Abstraction
-interface OtpProvider {
-  sendOtp(phone: string, otp: string): Promise<boolean>;
-}
-
-class MockOtpProvider implements OtpProvider {
-  async sendOtp(phone: string, otp: string): Promise<boolean> {
-    console.log(`[MOCK OTP] Sent OTP ${otp} to ${phone}`);
-    return true;
-  }
-}
-
-class ProductionOtpProvider implements OtpProvider {
-  async sendOtp(phone: string, otp: string): Promise<boolean> {
-    const apiKey = process.env.FAST2SMS_API_KEY;
-    if (!apiKey) {
-      console.error('[PROD OTP] FAST2SMS_API_KEY is not configured in .env.local.');
-      return false;
-    }
-    
-    try {
-      const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
-        method: 'POST',
-        headers: {
-          'authorization': apiKey,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          route: 'q',
-          message: `Your Mantri777 login OTP is ${otp}. Please do not share this with anyone.`,
-          language: 'english',
-          flash: 0,
-          numbers: phone
-        })
-      });
-
-      const data = await response.json();
-      if (data.return === true) {
-        console.log(`[PROD OTP] Fast2SMS successfully sent OTP to ${phone}`);
-        return true;
-      } else {
-        console.error(`[PROD OTP] Fast2SMS Error:`, data);
-        return false;
-      }
-    } catch (error) {
-      console.error(`[PROD OTP] Fast2SMS Network Error:`, error);
-      return false;
-    }
-  }
-}
-
-const USE_MOCK_OTP = process.env.NODE_ENV !== 'production' && process.env.USE_MOCK_OTP !== 'false';
-
-if (process.env.NODE_ENV === 'production' && USE_MOCK_OTP) {
-  console.error('CRITICAL SECURITY ERROR: USE_MOCK_OTP is active in production environment!');
-}
-
-const otpProvider: OtpProvider = USE_MOCK_OTP
-  ? new MockOtpProvider()
-  : new ProductionOtpProvider();
-
 const phoneSchema = z.string().regex(/^[0-9]{10}$/, 'Invalid phone number format');
-const otpSchema = z.string().regex(/^[0-9]{6}$/, 'OTP must be 6 digits');
+const otpSchema = z.string().regex(/^[0-9]{4,6}$/, 'Verification code must be 4 to 6 digits');
 const mpinSchema = z.string().regex(/^[0-9]{4,6}$/, 'MPIN must be 4 to 6 digits');
 
 export async function requestOtpAction(phoneInput: string) {
   const ip = getClientIp();
-  if (!checkRateLimit(ip, 'requestOtp', 3, 5 * 60 * 1000)) { // 3 per 5 mins
-    return { success: false, message: 'Too many requests. Please try again later.' };
+  if (!checkRateLimit(ip, 'requestOtp', 10, 60 * 1000)) {
+    return { success: false, message: 'Too many requests. Please wait a moment.' };
   }
 
   const parseResult = phoneSchema.safeParse(phoneInput);
   if (!parseResult.success) {
-    return { success: false, message: 'Invalid phone number' };
+    return { success: false, message: 'Please enter a valid 10-digit mobile number' };
   }
   const phone = parseResult.data;
-  
-  // Rate limiting / Cooldown check
-  const recentOtpArray = await db.select()
-    .from(otpVerifications)
-    .where(and(eq(otpVerifications.phone, phone), gt(otpVerifications.createdAt, new Date(Date.now() - 60 * 1000))))
-    .limit(1);
 
-  if (recentOtpArray.length > 0) {
-    return { success: false, message: 'Please wait 60 seconds before requesting another OTP.' };
-  }
-
-  // Generate 6-digit OTP
-  let generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+  // Generate unique 4-digit On-Screen Security Code
+  const generatedCode = Math.floor(1000 + Math.random() * 9000).toString();
   
-  if (USE_MOCK_OTP) {
-    generatedOtp = '123456'; 
-  }
-  
-  // Hash OTP for DB
-  const otpHash = await bcrypt.hash(generatedOtp, 10);
-  const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
+  // Hash code for database verification
+  const otpHash = await bcrypt.hash(generatedCode, 10);
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
 
   await db.insert(otpVerifications).values({
     phone,
@@ -114,15 +39,13 @@ export async function requestOtpAction(phoneInput: string) {
     expiresAt,
   });
 
-  const sent = await otpProvider.sendOtp(phone, generatedOtp);
-  if (!sent) {
-    await writeAuditLog('OTP_REQUESTED', 'User', { success: false, metadata: { phone, reason: 'Provider failure' } });
-    return { success: false, message: 'Failed to send OTP' };
-  }
+  await writeAuditLog('OTP_REQUESTED', 'User', { success: true, metadata: { phone, method: 'ON_SCREEN_SECURITY_CODE' } });
 
-  await writeAuditLog('OTP_REQUESTED', 'User', { success: true, metadata: { phone } });
-
-  return { success: true, message: 'OTP sent successfully.' };
+  return {
+    success: true,
+    code: generatedCode,
+    message: 'Security verification code generated.',
+  };
 }
 
 export async function verifyOtpAction(phoneInput: string, otpInput: string) {
