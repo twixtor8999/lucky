@@ -163,8 +163,8 @@ export default function MobileAppView({
   };
 
   // Auth Step 3: Set MPIN
-  const handleSaveMpin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveMpin = async (e?: React.FormEvent) => {
+    if (e && e.preventDefault) e.preventDefault();
     if (mpinInput.length !== 4) {
       showToast('error', 'Invalid MPIN', 'MPIN must be 4 digits');
       return;
@@ -180,6 +180,8 @@ export default function MobileAppView({
       sessionStorage.setItem('mantri_mpin_unlocked', 'true');
       setAppScreen('dashboard');
       showToast('success', 'Success', 'MPIN setup completed!');
+    } else {
+      showToast('error', 'Setup Failed', 'Could not save MPIN. Please try again.');
     }
   };
 
@@ -331,11 +333,12 @@ export default function MobileAppView({
           <p className="text-xs text-gray-500 mt-1">Set a 4-digit PIN for quick 1-tap app unlock</p>
         </div>
 
-        <div className="w-full max-w-sm mx-auto bg-white p-6 rounded-3xl border border-red-100 shadow-xl my-auto space-y-4">
+        <form onSubmit={handleSaveMpin} className="w-full max-w-sm mx-auto bg-white p-6 rounded-3xl border border-red-100 shadow-xl my-auto space-y-4">
           <div>
             <label className="text-xs font-bold text-gray-600 block mb-1">Enter 4-Digit MPIN</label>
             <input
               type="password"
+              inputMode="numeric"
               maxLength={4}
               placeholder="• • • •"
               value={mpinInput}
@@ -348,6 +351,7 @@ export default function MobileAppView({
             <label className="text-xs font-bold text-gray-600 block mb-1">Confirm MPIN</label>
             <input
               type="password"
+              inputMode="numeric"
               maxLength={4}
               placeholder="• • • •"
               value={confirmMpinInput}
@@ -357,13 +361,13 @@ export default function MobileAppView({
           </div>
 
           <button
-            onClick={handleSaveMpin}
+            type="submit"
             disabled={mpinInput.length !== 4 || confirmMpinInput.length !== 4 || authLoading}
             className="w-full py-3.5 rounded-2xl bg-[#e22e28] hover:bg-[#c92424] text-white font-black text-sm uppercase tracking-wider shadow-lg shadow-red-500/25 disabled:opacity-50"
           >
             {authLoading ? 'Saving...' : 'Set MPIN & Enter'}
           </button>
-        </div>
+        </form>
 
         <div className="text-center pb-4 text-[11px] font-bold text-gray-400">
           Version 1.0.5

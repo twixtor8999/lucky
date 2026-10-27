@@ -73,7 +73,7 @@ const otpProvider: OtpProvider = USE_MOCK_OTP
 
 const phoneSchema = z.string().regex(/^[0-9]{10}$/, 'Invalid phone number format');
 const otpSchema = z.string().regex(/^[0-9]{6}$/, 'OTP must be 6 digits');
-const mpinSchema = z.string().regex(/^[0-9]{6}$/, 'MPIN must be 6 digits');
+const mpinSchema = z.string().regex(/^[0-9]{4,6}$/, 'MPIN must be 4 to 6 digits');
 
 export async function requestOtpAction(phoneInput: string) {
   const ip = getClientIp();
@@ -260,7 +260,7 @@ export async function verifyOtpAction(phoneInput: string, otpInput: string) {
 export async function setupMpinAction(mpinInput: string) {
   const mpinRes = mpinSchema.safeParse(mpinInput);
   if (!mpinRes.success) {
-    return { success: false, message: 'MPIN must be 6 digits' };
+    return { success: false, message: 'MPIN must be 4 to 6 digits' };
   }
   const mpin = mpinRes.data;
 
@@ -271,10 +271,20 @@ export async function setupMpinAction(mpinInput: string) {
 
     const mpinHash = await bcrypt.hash(mpin, 10);
 
-    await db.insert(mpins).values({
-      userId,
-      mpinHash,
-    });
+    const existingMpin = await db.select().from(mpins).where(eq(mpins.userId, userId)).limit(1);
+    if (existingMpin.length > 0) {
+      await db.update(mpins).set({
+        mpinHash,
+        failedAttempts: 0,
+        lockedUntil: null,
+        updatedAt: new Date(),
+      }).where(eq(mpins.userId, userId));
+    } else {
+      await db.insert(mpins).values({
+        userId,
+        mpinHash,
+      });
+    }
 
     await writeAuditLog('MPIN_SETUP', 'User', { actorId: userId, entityId: userId });
 

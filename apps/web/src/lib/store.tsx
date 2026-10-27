@@ -308,7 +308,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Auth: Setup MPIN
   const setupMpin = async (_mpin: string) => {
     audioHaptics.playTap();
-    if (!user) return { success: false };
+    let currentUser = user;
+    if (!currentUser && typeof window !== 'undefined') {
+      const stored = localStorage.getItem('mantri777_user');
+      if (stored) {
+        try {
+          currentUser = JSON.parse(stored);
+        } catch (e) {}
+      }
+    }
+    if (!currentUser) {
+      showToast('error', 'Session Expired', 'Please verify your phone number again.');
+      return { success: false };
+    }
 
     const result = await setupMpinAction(_mpin);
     
@@ -318,14 +330,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     const updated: UserProfile = {
-      ...user,
+      ...currentUser,
       hasMpin: true,
       updatedAt: new Date().toISOString(),
     };
 
     setUser(updated);
-    localStorage.setItem('mantri777_user', JSON.stringify(updated));
-    showToast('success', 'MPIN Created', 'Your 6-digit MPIN is secured.');
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mantri777_user', JSON.stringify(updated));
+    }
+    showToast('success', 'MPIN Created', 'Your MPIN has been saved successfully.');
     return { success: true };
   };
 
