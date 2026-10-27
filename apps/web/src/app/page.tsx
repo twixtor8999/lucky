@@ -190,10 +190,10 @@ export default async function HomePage() {
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 opacity-90"><path d="M12 0L13.8 10.2L24 12L13.8 13.8L12 24L10.2 13.8L0 12L10.2 10.2L12 0Z" /></svg>
         </div>
 
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-center relative z-20 px-4">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between relative z-20 px-4">
 
           {/* Left Text Content */}
-          <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left space-y-0 relative z-20 md:pl-20">
+          <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left space-y-0 relative z-20 md:pl-10 lg:pl-14">
 
             {/* Top Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full text-[12px] sm:text-[14px] font-bold text-gray-800 shadow-lg border border-yellow-200 mb-6 mt-4 md:mt-0 animate-[bounce_3s_infinite] hover:scale-105 transition-transform">
