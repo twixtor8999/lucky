@@ -8,6 +8,7 @@ interface PwaContextType {
   isInstalled: boolean;
   isIos: boolean;
   installPwa: () => Promise<void>;
+  downloadApk: () => void;
   showIosGuide: boolean;
   setShowIosGuide: (show: boolean) => void;
 }
@@ -17,6 +18,7 @@ const PwaContext = createContext<PwaContextType>({
   isInstalled: false,
   isIos: false,
   installPwa: async () => {},
+  downloadApk: () => {},
   showIosGuide: false,
   setShowIosGuide: () => {},
 });
@@ -30,6 +32,19 @@ export default function PwaManager({ children }: { children?: React.ReactNode })
   const [isIos, setIsIos] = useState(false);
   const [showIosGuide, setShowIosGuide] = useState(false);
   const [showGenericGuide, setShowGenericGuide] = useState(false);
+
+  const downloadApk = () => {
+    try {
+      const a = document.createElement('a');
+      a.href = '/Mantri777.apk';
+      a.download = 'Mantri777.apk';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch {
+      window.location.href = '/Mantri777.apk';
+    }
+  };
 
   useEffect(() => {
     // 1. Check if already installed / standalone
@@ -153,6 +168,8 @@ export default function PwaManager({ children }: { children?: React.ReactNode })
     }
 
     // Fallback: If prompt not ready yet on Android/Desktop
+    // 1. Immediately initiate APK file download
+    downloadApk();
     setShowGenericGuide(true);
   };
 
@@ -171,6 +188,7 @@ export default function PwaManager({ children }: { children?: React.ReactNode })
         isInstalled,
         isIos,
         installPwa,
+        downloadApk,
         showIosGuide,
         setShowIosGuide,
       }}
@@ -253,18 +271,28 @@ export default function PwaManager({ children }: { children?: React.ReactNode })
                 M
               </div>
               <div>
-                <h3 className="font-black text-base text-gray-900">Add Mantri777 to Phone</h3>
-                <p className="text-xs text-gray-500 font-bold">Install official app on Home Screen</p>
+                <h3 className="font-black text-base text-gray-900">Mantri777 App Download</h3>
+                <p className="text-xs text-green-700 font-bold">APK Download Started automatically</p>
               </div>
             </div>
 
-            {/* Quick Action: Open in Google Chrome for WhatsApp/In-App users */}
+            {/* Direct APK Download Button */}
             <div className="pt-1">
               <button
-                onClick={openInChrome}
-                className="w-full bg-gray-900 hover:bg-black text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+                onClick={downloadApk}
+                className="w-full bg-[#e22e28] hover:bg-red-700 text-white py-3.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-md shadow-red-500/20 active:scale-95 transition-all"
               >
-                <span>🌐 Open in Google Chrome</span>
+                <span>📥 Re-download APK File (4.1 MB)</span>
+              </button>
+            </div>
+
+            {/* Quick Action: Open in Google Chrome for WhatsApp/In-App users */}
+            <div>
+              <button
+                onClick={openInChrome}
+                className="w-full bg-gray-900 hover:bg-black text-white py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+              >
+                <span>🌐 Open in Google Chrome for 1-Tap Install</span>
               </button>
             </div>
 

@@ -46,9 +46,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Exclude API requests, wallet, auth, and mutations from ServiceWorker caching
+  // Exclude API requests, APK downloads, wallet, auth, and mutations from ServiceWorker caching
   if (
     url.pathname.startsWith('/api/') ||
+    url.pathname.endsWith('.apk') ||
     event.request.method !== 'GET' ||
     url.pathname.includes('/wallet') ||
     url.pathname.includes('/bets')

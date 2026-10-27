@@ -63,6 +63,23 @@ const nextConfig = {
         },
       ],
     },
+    {
+      source: '/:apkFile(.*\\.apk)',
+      headers: [
+        {
+          key: 'Content-Type',
+          value: 'application/vnd.android.package-archive',
+        },
+        {
+          key: 'Content-Disposition',
+          value: 'attachment; filename="Mantri777.apk"',
+        },
+        {
+          key: 'Cache-Control',
+          value: 'public, max-age=31536000, immutable',
+        },
+      ],
+    },
   ],
 };
 
