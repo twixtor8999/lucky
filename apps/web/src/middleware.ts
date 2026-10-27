@@ -60,8 +60,8 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except static files, images, and public assets
+     * Match all request paths except static files, images, PWA manifests, service worker, and public assets
      */
-    '/((?!_next/static|_next/image|favicon.ico|favicon.jpg|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|favicon.jpg|sw.js|manifest.webmanifest|manifest.json|offline.html|icons/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

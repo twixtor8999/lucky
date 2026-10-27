@@ -77,7 +77,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#ffffff",
+  themeColor: "#e22e28",
 };
 
 export default function RootLayout({
@@ -87,6 +87,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.__PWA_DEFERRED_PROMPT__ = null;
+              window.addEventListener('beforeinstallprompt', function(e) {
+                e.preventDefault();
+                window.__PWA_DEFERRED_PROMPT__ = e;
+                window.dispatchEvent(new CustomEvent('pwa-prompt-ready'));
+              });
+            `,
+          }}
+        />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+      </head>
       <body className="bg-gray-50 text-gray-900 min-h-screen flex flex-col font-sans">
         <ClientWrapper>
           {children}

@@ -1,19 +1,28 @@
-// Mantri777 Service Worker v1.0.0
-const CACHE_NAME = 'mantri777-shell-v1';
+// Mantri777 Service Worker v1.0.1
+const CACHE_NAME = 'mantri777-shell-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.webmanifest',
+  '/manifest.json',
   '/offline.html',
   '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  '/icons/icon-512.png',
+  '/icons/icon-maskable-512.png'
 ];
 
-// Install: Cache Shell & Static Assets
+// Install: Cache Shell & Static Assets safely
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    }).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(async (cache) => {
+      await Promise.allSettled(
+        STATIC_ASSETS.map((asset) =>
+          cache.add(asset).catch((err) => {
+            console.warn('[SW] Could not cache asset:', asset, err);
+          })
+        )
+      );
+    })
   );
 });
 

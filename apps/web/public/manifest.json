@@ -1,11 +1,15 @@
 {
-  "name": "Mantri777",
+  "name": "Mantri777 — Live Market & Gaming Platform",
   "short_name": "Mantri777",
-  "description": "Play and Win Big",
+  "description": "India's #1 Trusted Satta Matka platform with real-time markets, instant betting, live results, and instant wallet settlements.",
+  "id": "/?app=true",
   "start_url": "/?app=true",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#fff5f5",
   "theme_color": "#e22e28",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -25,5 +29,23 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Live Markets",
+      "url": "/markets",
+      "description": "View live market opening & closing charts"
+    },
+    {
+      "name": "My Bets",
+      "url": "/bets",
+      "description": "Check active bet slips and outcomes"
+    },
+    {
+      "name": "Wallet",
+      "url": "/wallet",
+      "description": "Add funds or view balance"
+    }
+  ],
+  "categories": ["entertainment", "finance", "games"]
 }

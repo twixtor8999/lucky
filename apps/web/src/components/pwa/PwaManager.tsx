@@ -45,21 +45,34 @@ export default function PwaManager({ children }: { children?: React.ReactNode })
     const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
     setIsIos(isIosDevice);
 
-    // 3. Register Service Worker
+    // 3. Register Service Worker immediately (both interactive and complete state)
     if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
-      window.addEventListener('load', () => {
+      const registerServiceWorker = () => {
         navigator.serviceWorker
-          .register('/sw.js')
+          .register('/sw.js', { scope: '/' })
           .then((reg) => {
-            console.log('✅ Mantri777 Service Worker registered:', reg.scope);
+            console.log('✅ Mantri777 Service Worker registered with scope:', reg.scope);
+            reg.update().catch(() => {});
           })
           .catch((err) => {
             console.warn('⚠️ Service Worker registration failed:', err);
           });
-      });
+      };
+
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        registerServiceWorker();
+      } else {
+        window.addEventListener('load', registerServiceWorker, { once: true });
+      }
     }
 
-    // 4. Listen for beforeinstallprompt
+    // 4. Capture any existing early prompt from head script
+    if ((window as any).__PWA_DEFERRED_PROMPT__) {
+      setDeferredPrompt((window as any).__PWA_DEFERRED_PROMPT__);
+      setIsInstallable(true);
+    }
+
+    // 5. Listen for beforeinstallprompt
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -67,13 +80,22 @@ export default function PwaManager({ children }: { children?: React.ReactNode })
       (window as any).__PWA_DEFERRED_PROMPT__ = e;
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    const handlePromptReady = () => {
+      if ((window as any).__PWA_DEFERRED_PROMPT__) {
+        setDeferredPrompt((window as any).__PWA_DEFERRED_PROMPT__);
+        setIsInstallable(true);
+      }
+    };
 
-    // 5. Listen for appinstalled
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('pwa-prompt-ready', handlePromptReady);
+
+    // 6. Listen for appinstalled
     const handleAppInstalled = () => {
       setIsInstalled(true);
       setIsInstallable(false);
       setDeferredPrompt(null);
+      (window as any).__PWA_DEFERRED_PROMPT__ = null;
       console.log('🎉 Mantri777 PWA was installed successfully');
     };
 
@@ -81,6 +103,7 @@ export default function PwaManager({ children }: { children?: React.ReactNode })
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('pwa-prompt-ready', handlePromptReady);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
@@ -95,13 +118,17 @@ export default function PwaManager({ children }: { children?: React.ReactNode })
     // Check deferredPrompt first
     const prompt = deferredPrompt || (window as any).__PWA_DEFERRED_PROMPT__;
     if (prompt) {
-      prompt.prompt();
-      const choiceResult = await prompt.userChoice;
-      if (choiceResult && choiceResult.outcome === 'accepted') {
-        setIsInstalled(true);
-        setIsInstallable(false);
-        setDeferredPrompt(null);
-        (window as any).__PWA_DEFERRED_PROMPT__ = null;
+      try {
+        await prompt.prompt();
+        const choiceResult = await prompt.userChoice;
+        if (choiceResult && choiceResult.outcome === 'accepted') {
+          setIsInstalled(true);
+          setIsInstallable(false);
+          setDeferredPrompt(null);
+          (window as any).__PWA_DEFERRED_PROMPT__ = null;
+        }
+      } catch (err) {
+        console.warn('Install prompt error:', err);
       }
       return;
     }
