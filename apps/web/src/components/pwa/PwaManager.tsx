@@ -219,7 +219,7 @@ export default function PwaManager({ children }: { children?: React.ReactNode })
       {/* Generic Browser Guide Modal */}
       {showGenericGuide && (
         <div className="fixed inset-0 z-[200] bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-6 text-gray-900 shadow-2xl space-y-5 animate-in slide-in-from-bottom duration-300 relative">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-6 text-gray-900 shadow-2xl space-y-4 animate-in slide-in-from-bottom duration-300 relative">
             <button
               onClick={() => setShowGenericGuide(false)}
               className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 rounded-full"
@@ -232,21 +232,58 @@ export default function PwaManager({ children }: { children?: React.ReactNode })
                 M
               </div>
               <div>
-                <h3 className="font-black text-base text-gray-900">Install Mantri777 App</h3>
-                <p className="text-xs text-gray-500 font-bold">Fast & secure home screen app</p>
+                <h3 className="font-black text-base text-gray-900">Add Mantri777 to Phone</h3>
+                <p className="text-xs text-gray-500 font-bold">2 Quick Steps to Install</p>
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-red-50 border border-red-100 text-xs text-gray-700 leading-relaxed font-medium">
-              Tap your browser menu (<span className="font-black text-gray-900">⋮</span> three dots at top or bottom) and select <span className="font-black text-[#e22e28]">"Install App"</span> or <span className="font-black text-[#e22e28]">"Add to Home screen"</span>.
+            {/* Step-by-Step Instructions */}
+            <div className="space-y-2.5 pt-1 text-xs text-gray-700 font-semibold">
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-gray-50 border border-gray-100">
+                <div className="w-7 h-7 rounded-full bg-red-100 text-[#e22e28] flex items-center justify-center text-xs font-black shrink-0 mt-0.5">
+                  1
+                </div>
+                <div>
+                  <p className="font-black text-gray-900">Tap Browser Menu (Top-Right)</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5 font-normal">
+                    Tap the <span className="font-black text-gray-900">⋮ (3 dots)</span> at the top right of your browser.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-gray-50 border border-gray-100">
+                <div className="w-7 h-7 rounded-full bg-red-100 text-[#e22e28] flex items-center justify-center text-xs font-black shrink-0 mt-0.5">
+                  2
+                </div>
+                <div>
+                  <p className="font-black text-gray-900">Tap "Install App" or "Add to Home Screen"</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5 font-normal">
+                    Select <span className="font-black text-[#e22e28]">Install App</span> in the menu list.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-emerald-50/60 border border-emerald-100">
+                <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-black shrink-0 mt-0.5">
+                  3
+                </div>
+                <div>
+                  <p className="font-black text-emerald-900">Instant Launch</p>
+                  <p className="text-[11px] text-emerald-700 mt-0.5 font-normal">
+                    Mantri777 icon appears on your home screen ready to play with 0 lag.
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <button
-              onClick={() => setShowGenericGuide(false)}
-              className="w-full bg-[#e22e28] text-white py-3.5 rounded-xl font-black text-sm tracking-wide shadow-lg shadow-red-500/20 hover:bg-red-700 active:scale-95 transition-all"
-            >
-              Understood
-            </button>
+            <div className="pt-1">
+              <button
+                onClick={() => setShowGenericGuide(false)}
+                className="w-full bg-[#e22e28] text-white py-3.5 rounded-xl font-black text-sm tracking-wide shadow-lg shadow-red-500/20 hover:bg-red-700 active:scale-95 transition-all"
+              >
+                Got It — Tap ⋮ at Top Right
+              </button>
+            </div>
           </div>
         </div>
       )}
