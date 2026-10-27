@@ -335,7 +335,7 @@ export const auditLogs = pgTable('audit_logs', {
 export const systemSettings = pgTable('system_settings', {
   id: uuid('id').defaultRandom().primaryKey(),
   ownerUpiId: varchar('owner_upi_id', { length: 100 }).default('owner@upi').notNull(),
-  ownerName: varchar('owner_name', { length: 100 }).default('Lucky 777').notNull(),
+  ownerName: varchar('owner_name', { length: 100 }).default('Mantri 777').notNull(),
   supportWhatsapp: varchar('support_whatsapp', { length: 20 }).default('+919380347013').notNull(),
   depositEnabled: boolean('deposit_enabled').default(true).notNull(),
   withdrawalEnabled: boolean('withdrawal_enabled').default(true).notNull(),

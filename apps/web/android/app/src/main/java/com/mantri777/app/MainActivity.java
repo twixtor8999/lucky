@@ -1,4 +1,4 @@
-package com.lucky777.app;
+package com.mantri777.app;
 
 import com.getcapacitor.BridgeActivity;
 

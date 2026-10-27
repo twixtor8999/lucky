@@ -1,11 +1,11 @@
-// Lucky 777 Service Worker v1.0.0
-const CACHE_NAME = 'lucky777-shell-v1';
+// Mantri777 Service Worker v1.0.0
+const CACHE_NAME = 'mantri777-shell-v1';
 const STATIC_ASSETS = [
   '/',
   '/manifest.webmanifest',
   '/offline.html',
-  '/icons/icon-192.svg',
-  '/icons/icon-512.svg'
+  '/icons/icon-192.png',
+  '/icons/icon-512.png'
 ];
 
 // Install: Cache Shell & Static Assets

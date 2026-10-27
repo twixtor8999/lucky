@@ -247,7 +247,7 @@ export default function PlayMarketPage() {
       <div className="space-y-2">
         <label className="text-xs font-black text-gray-700 uppercase tracking-wider">Select Bet Amount</label>
         <div className="grid grid-cols-5 gap-2">
-          {[10, 20, 50, 100, 500].map((amt) => (
+          {[50, 100, 200, 500, 1000].map((amt) => (
             <button
               key={amt}
               type="button"

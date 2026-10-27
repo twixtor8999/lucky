@@ -107,7 +107,7 @@ export default function MobileAppView({
           setAppScreen('set_mpin');
         } else {
           // Check if previously locked with MPIN
-          const isMpinUnlocked = sessionStorage.getItem('mantri_mpin_unlocked');
+          const isMpinUnlocked = sessionStorage.getItem('mantri_mpin_unlocked') || sessionStorage.getItem('lucky_mpin_unlocked');
           if (isMpinUnlocked === 'true') {
             setAppScreen('dashboard');
           } else {

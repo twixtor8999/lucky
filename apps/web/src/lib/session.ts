@@ -4,7 +4,8 @@ import { eq, and, gt, isNull } from 'drizzle-orm';
 import { UserRole, UserStatus } from '@zenvora/shared';
 import crypto from 'crypto';
 
-const SESSION_COOKIE_NAME = 'lucky777_session';
+const SESSION_COOKIE_NAME = 'mantri777_session';
+const LEGACY_COOKIE_NAME = 'lucky777_session';
 
 export function hashToken(token: string) {
   return crypto.createHash('sha256').update(token).digest('hex');
@@ -39,7 +40,7 @@ export async function createSession(userId: string) {
 export async function getServerSession() {
   let token: string | undefined;
   try {
-    token = cookies().get(SESSION_COOKIE_NAME)?.value;
+    token = cookies().get(SESSION_COOKIE_NAME)?.value || cookies().get(LEGACY_COOKIE_NAME)?.value;
   } catch {
     token = (globalThis as any).__TEST_SESSION_TOKEN__;
   }
@@ -86,7 +87,7 @@ export async function getServerSession() {
 }
 
 export async function destroySession() {
-  const token = cookies().get(SESSION_COOKIE_NAME)?.value;
+  const token = cookies().get(SESSION_COOKIE_NAME)?.value || cookies().get(LEGACY_COOKIE_NAME)?.value;
   if (token) {
     const tokenHash = hashToken(token);
     await db.update(sessions)
@@ -94,6 +95,7 @@ export async function destroySession() {
       .where(eq(sessions.tokenHash, tokenHash));
   }
   cookies().delete(SESSION_COOKIE_NAME);
+  cookies().delete(LEGACY_COOKIE_NAME);
 }
 
 export async function requireAdmin() {

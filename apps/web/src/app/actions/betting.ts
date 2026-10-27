@@ -1,7 +1,7 @@
 'use server';
 
 import { db, bets, transactions, ledgerEntries, wallets, results, markets } from '@zenvora/shared/db';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, gte } from 'drizzle-orm';
 import { PlaceBetRequest, BetTypeCode, BetTypeRule } from '@zenvora/shared';
 import { getServerSession, requireAdmin } from '../../lib/session';
 import { getWalletAction } from './wallet';
@@ -12,13 +12,13 @@ import { writeAuditLog } from '../../lib/audit';
 
 // For MVP, we mirror the BET_RULES on the server to prevent client spoofing
 const SERVER_BET_RULES: Record<BetTypeCode, Pick<BetTypeRule, 'multiplier' | 'minAmount' | 'maxAmount'>> = {
-  [BetTypeCode.SINGLE_ANK]: { multiplier: 9.5, minAmount: 10, maxAmount: 10000 },
-  [BetTypeCode.JODI]: { multiplier: 95, minAmount: 10, maxAmount: 5000 },
-  [BetTypeCode.SINGLE_PATTI]: { multiplier: 150, minAmount: 10, maxAmount: 2500 },
-  [BetTypeCode.DOUBLE_PATTI]: { multiplier: 300, minAmount: 10, maxAmount: 1500 },
-  [BetTypeCode.TRIPLE_PATTI]: { multiplier: 700, minAmount: 10, maxAmount: 1000 },
-  [BetTypeCode.HALF_SANGAM]: { multiplier: 1000, minAmount: 10, maxAmount: 500 },
-  [BetTypeCode.FULL_SANGAM]: { multiplier: 10000, minAmount: 10, maxAmount: 200 },
+  [BetTypeCode.SINGLE_ANK]: { multiplier: 8.5, minAmount: 50, maxAmount: 1000 },
+  [BetTypeCode.JODI]: { multiplier: 85, minAmount: 50, maxAmount: 300 },
+  [BetTypeCode.SINGLE_PATTI]: { multiplier: 130, minAmount: 10, maxAmount: 100 },
+  [BetTypeCode.DOUBLE_PATTI]: { multiplier: 260, minAmount: 10, maxAmount: 50 },
+  [BetTypeCode.TRIPLE_PATTI]: { multiplier: 650, minAmount: 10, maxAmount: 20 },
+  [BetTypeCode.HALF_SANGAM]: { multiplier: 850, minAmount: 10, maxAmount: 10 },
+  [BetTypeCode.FULL_SANGAM]: { multiplier: 8500, minAmount: 10, maxAmount: 10 },
 };
 
 const placeBetSchema = z.object({
@@ -64,6 +64,52 @@ export async function placeBetAction(reqInput: PlaceBetRequest) {
     }
     if (market.status !== 'OPEN') {
       return { success: false, message: 'Market is closed' };
+    }
+
+    // Enforce Daily Betting Limit (Max ₹5,000 per user per day)
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const todayBets = await db
+      .select({ amount: bets.amountMinor })
+      .from(bets)
+      .where(
+        and(
+          eq(bets.userId, user.id),
+          gte(bets.placedAt, startOfToday)
+        )
+      );
+
+    const totalStakedToday = todayBets.reduce((sum, b) => sum + Number(b.amount), 0);
+    if (totalStakedToday + req.amount > 5000) {
+      const remainingLimit = Math.max(0, 5000 - totalStakedToday);
+      return {
+        success: false,
+        message: `Daily betting limit of ₹5,000 reached. You have wagered ₹${totalStakedToday} today. Remaining limit: ₹${remainingLimit}.`
+      };
+    }
+
+    // Prevent duplicate stacking on the exact same number in the same session
+    const existingSameBet = await db
+      .select({ id: bets.id })
+      .from(bets)
+      .where(
+        and(
+          eq(bets.userId, user.id),
+          eq(bets.marketId, req.marketId),
+          eq(bets.betTypeCode, req.betType),
+          eq(bets.selection, req.selection),
+          eq(bets.session, req.session || 'OPEN'),
+          eq(bets.status, 'ACTIVE')
+        )
+      )
+      .limit(1);
+
+    if (existingSameBet.length > 0) {
+      return {
+        success: false,
+        message: `You already have an active bet on number ${req.selection} in this session. Duplicate bets on the same number are restricted.`
+      };
     }
 
     // Validate Balance Server-Side

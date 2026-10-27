@@ -1,8 +1,8 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.lucky777.app',
-  appName: 'Lucky 777',
+  appId: 'com.mantri777.app',
+  appName: 'Mantri777',
   webDir: 'www',
   server: {
     url: 'http://10.65.15.96:3000',

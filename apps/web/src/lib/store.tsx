@@ -12,57 +12,57 @@ export const BET_RULES: Record<BetTypeCode, BetTypeRule> = {
   [BetTypeCode.SINGLE_ANK]: {
     code: BetTypeCode.SINGLE_ANK,
     name: 'Single Ank',
-    multiplier: 9.5,
-    minAmount: 10,
-    maxAmount: 10000,
+    multiplier: 8.5,
+    minAmount: 50,
+    maxAmount: 1000,
     description: 'Pick single digit from 0 to 9 for Open or Close',
   },
   [BetTypeCode.JODI]: {
     code: BetTypeCode.JODI,
     name: 'Jodi',
-    multiplier: 95,
-    minAmount: 10,
-    maxAmount: 5000,
+    multiplier: 85,
+    minAmount: 50,
+    maxAmount: 300,
     description: 'Pick two digit pair from 00 to 99',
   },
   [BetTypeCode.SINGLE_PATTI]: {
     code: BetTypeCode.SINGLE_PATTI,
     name: 'Single Patti',
-    multiplier: 150,
+    multiplier: 130,
     minAmount: 10,
-    maxAmount: 2500,
+    maxAmount: 100,
     description: 'Pick 3 distinct ascending digits (e.g. 128, 345)',
   },
   [BetTypeCode.DOUBLE_PATTI]: {
     code: BetTypeCode.DOUBLE_PATTI,
     name: 'Double Patti',
-    multiplier: 300,
+    multiplier: 260,
     minAmount: 10,
-    maxAmount: 1500,
+    maxAmount: 50,
     description: 'Pick 3 digits with one pair (e.g. 118, 226)',
   },
   [BetTypeCode.TRIPLE_PATTI]: {
     code: BetTypeCode.TRIPLE_PATTI,
     name: 'Triple Patti',
-    multiplier: 700,
+    multiplier: 650,
     minAmount: 10,
-    maxAmount: 1000,
+    maxAmount: 20,
     description: 'Pick 3 identical digits (e.g. 000, 111, 777)',
   },
   [BetTypeCode.HALF_SANGAM]: {
     code: BetTypeCode.HALF_SANGAM,
     name: 'Half Sangam',
-    multiplier: 1000,
+    multiplier: 850,
     minAmount: 10,
-    maxAmount: 500,
+    maxAmount: 10,
     description: 'Open Patti with Close Ank or Open Ank with Close Patti',
   },
   [BetTypeCode.FULL_SANGAM]: {
     code: BetTypeCode.FULL_SANGAM,
     name: 'Full Sangam',
-    multiplier: 10000,
+    multiplier: 8500,
     minAmount: 10,
-    maxAmount: 200,
+    maxAmount: 10,
     description: 'Exact Open Patti and Close Patti combination',
   },
 };
@@ -93,7 +93,7 @@ interface AppContextType {
   // Wallet
   wallet: WalletBalance;
   transactions: TransactionRecord[];
-  addMoney: (amount: number, utr: string) => Promise<{ success: boolean; txnId?: string; message?: string }>;
+  addMoney: (amount: number, utr: string, assignedUpiId?: string) => Promise<{ success: boolean; txnId?: string; message?: string }>;
   requestWithdrawal: (amount: number, upiOrBank: string) => Promise<{ success: boolean; txnId: string; message: string }>;
 
   // Markets
@@ -165,8 +165,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Load persisted session on client
   useEffect(() => {
     try {
-      const savedUser = localStorage.getItem('lucky777_user');
-      const savedBonus = localStorage.getItem('lucky777_bonus_claimed');
+      const savedUser = localStorage.getItem('mantri777_user') || localStorage.getItem('lucky777_user');
+      const savedBonus = localStorage.getItem('mantri777_bonus_claimed') || localStorage.getItem('lucky777_bonus_claimed');
       if (savedUser) {
         const parsed = JSON.parse(savedUser);
         setUser(parsed);
@@ -295,7 +295,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
 
     setUser(finalUser as UserProfile);
-    localStorage.setItem('lucky777_user', JSON.stringify(finalUser));
+    localStorage.setItem('mantri777_user', JSON.stringify(finalUser));
     showToast('success', 'Mobile Verified', 'Phone number authenticated successfully.');
 
     return {
@@ -324,7 +324,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
 
     setUser(updated);
-    localStorage.setItem('lucky777_user', JSON.stringify(updated));
+    localStorage.setItem('mantri777_user', JSON.stringify(updated));
     showToast('success', 'MPIN Created', 'Your 6-digit MPIN is secured.');
     return { success: true };
   };
@@ -346,7 +346,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
 
     setUser(finalUser as UserProfile);
-    localStorage.setItem('lucky777_user', JSON.stringify(finalUser));
+    localStorage.setItem('mantri777_user', JSON.stringify(finalUser));
     showToast('success', 'Welcome Back', `Logged in as +91 ${phone}`);
     return { success: true };
   };
@@ -356,6 +356,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     audioHaptics.playTap();
     await logoutAction();
     setUser(null);
+    localStorage.removeItem('mantri777_user');
     localStorage.removeItem('lucky777_user');
     showToast('info', 'Logged Out', 'Your session has ended securely.');
   };
@@ -380,7 +381,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateBalance(wallet.cashBalance, newBonusBal, wallet.lockedBalance);
 
     setIsBonusClaimed(true);
-    localStorage.setItem('lucky777_bonus_claimed', 'true');
+    localStorage.setItem('mantri777_bonus_claimed', 'true');
 
     // Send in-app notification
     const bonusNotif: NotificationItem = {
@@ -398,11 +399,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Wallet: Add Money
-  const addMoney = async (amount: number, utr: string) => {
+  const addMoney = async (amount: number, utr: string, assignedUpiId?: string) => {
     audioHaptics.playTap();
     if (!user) return { success: false, message: 'Please log in to add money' };
 
-    const result = await addMoneyAction(amount, utr);
+    const result = await addMoneyAction(amount, utr, assignedUpiId);
     if (!result.success) {
       showToast('error', 'Deposit Failed', result.message || 'Failed to submit deposit');
       return { success: false, message: result.message };

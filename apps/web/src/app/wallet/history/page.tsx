@@ -63,7 +63,7 @@ export default function DepositHistoryPage() {
       </div>
 
       <p className="text-xs text-gray-500 font-medium mb-6">
-        Track your manual UPI deposit requests and admin verification status.
+        Track your UPI deposit requests and real-time verification status.
       </p>
 
       {/* Content */}
@@ -154,7 +154,7 @@ export default function DepositHistoryPage() {
                 {/* Notes & Status messages */}
                 {isPending && (
                   <p className="text-[11px] text-amber-800 bg-amber-50/70 p-2.5 rounded-xl border border-amber-100 font-medium leading-relaxed">
-                    ⏳ Waiting for owner to verify incoming bank payment. Your wallet balance will be credited upon confirmation.
+                    ⏳ Payment submitted. Verifying transaction with banking network. Your wallet balance will be credited upon confirmation.
                   </p>
                 )}
 

@@ -2,10 +2,13 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Download, Smartphone, ShieldCheck, ArrowLeft, Star, ChevronRight } from 'lucide-react';
+import { Download, Smartphone, ShieldCheck, ArrowLeft, Star, CheckCircle2 } from 'lucide-react';
 import { audioHaptics } from '@/lib/audio-haptics';
+import { usePwa } from '@/components/pwa/PwaManager';
 
 export default function DownloadPage() {
+  const { installPwa, isInstalled } = usePwa();
+
   return (
     <div className="flex-1 min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900 pb-24">
       {/* Header */}
@@ -23,20 +26,29 @@ export default function DownloadPage() {
 
         <h2 className="text-3xl font-black tracking-tight mb-2">Mantri777 App</h2>
         <p className="text-gray-500 font-medium text-sm mb-8">
-          The fastest and most secure way to play. Download the official Android APK now.
+          The fastest and most secure way to play. Install the official Mantri777 app on your home screen now.
         </p>
 
-        {/* Download Button */}
+        {/* Download / Install Button */}
         <button
           onClick={() => {
             audioHaptics.playTap();
-            alert('The APK file will be uploaded by the developer soon. Please try again later.');
+            installPwa();
           }}
-          className="w-full bg-[#e42e2a] text-white py-4 rounded-xl flex items-center justify-center gap-2 shadow-xl shadow-red-500/20 hover:bg-red-700 hover:scale-[1.02] active:scale-95 transition-all mb-8 relative overflow-hidden group"
+          className="w-full bg-[#e42e2a] text-white py-4 rounded-xl flex items-center justify-center gap-2 shadow-xl shadow-red-500/20 hover:bg-red-700 hover:scale-[1.02] active:scale-95 transition-all mb-8 relative overflow-hidden group cursor-pointer"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
-          <Download className="w-5 h-5 stroke-[2.5]" />
-          <span className="font-black tracking-wider uppercase text-sm">Download APK v1.0.0</span>
+          {isInstalled ? (
+            <>
+              <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
+              <span className="font-black tracking-wider uppercase text-sm">App Already Installed</span>
+            </>
+          ) : (
+            <>
+              <Download className="w-5 h-5 stroke-[2.5]" />
+              <span className="font-black tracking-wider uppercase text-sm">Install App to Home Screen</span>
+            </>
+          )}
         </button>
 
         {/* Features list */}
@@ -78,23 +90,19 @@ export default function DownloadPage() {
 
         {/* Installation Instructions */}
         <div className="w-full mt-8 text-left">
-          <h3 className="font-black text-sm text-gray-400 uppercase tracking-wider mb-3 px-2">How to Install</h3>
+          <h3 className="font-black text-sm text-gray-400 uppercase tracking-wider mb-3 px-2">How to Install (Takes 5 Seconds)</h3>
           <div className="space-y-3">
             <div className="flex items-center gap-3 text-sm font-medium text-gray-600">
-              <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs font-bold shrink-0">1</div>
-              <p>Download the APK file</p>
+              <div className="w-6 h-6 rounded-full bg-red-100 text-[#e22e28] flex items-center justify-center text-xs font-bold shrink-0">1</div>
+              <p>Tap the <span className="font-bold text-gray-900">Install App</span> button above</p>
             </div>
             <div className="flex items-center gap-3 text-sm font-medium text-gray-600">
-              <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs font-bold shrink-0">2</div>
-              <p>Go to Settings &gt; Security</p>
+              <div className="w-6 h-6 rounded-full bg-red-100 text-[#e22e28] flex items-center justify-center text-xs font-bold shrink-0">2</div>
+              <p>Confirm <span className="font-bold text-gray-900">"Install"</span> on your phone prompt</p>
             </div>
             <div className="flex items-center gap-3 text-sm font-medium text-gray-600">
-              <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs font-bold shrink-0">3</div>
-              <p>Enable <span className="font-bold text-gray-900">Unknown Sources</span></p>
-            </div>
-            <div className="flex items-center gap-3 text-sm font-medium text-gray-600">
-              <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs font-bold shrink-0">4</div>
-              <p>Open the APK and Install</p>
+              <div className="w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-xs font-bold shrink-0">3</div>
+              <p>Open <span className="font-bold text-gray-900">Mantri777</span> directly from your apps!</p>
             </div>
           </div>
         </div>

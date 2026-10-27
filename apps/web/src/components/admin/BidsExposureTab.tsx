@@ -14,7 +14,8 @@ import {
   ChevronRight,
   Clock,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Flame
 } from 'lucide-react';
 
 interface MarketItem {
@@ -62,6 +63,7 @@ export default function BidsExposureTab() {
   const [selectedSession, setSelectedSession] = useState<'all' | 'OPEN' | 'CLOSE'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSelectionNumber, setFilterSelectionNumber] = useState<string | null>(null);
+  const [highStakesOnly, setHighStakesOnly] = useState(false);
 
   const loadData = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -108,6 +110,8 @@ export default function BidsExposureTab() {
       if (selectedSession !== 'all' && b.session !== selectedSession) return false;
       // Clicked selection number filter
       if (filterSelectionNumber !== null && b.selection !== filterSelectionNumber) return false;
+      // High Stakes filter (amount >= 150 or Jodi >= 100)
+      if (highStakesOnly && !(b.amount >= 150 || (b.betTypeCode === 'JODI' && b.amount >= 100))) return false;
       // Search query (phone or number)
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
@@ -118,7 +122,7 @@ export default function BidsExposureTab() {
       }
       return true;
     });
-  }, [bets, selectedCategory, selectedMarketId, selectedBetType, selectedSession, filterSelectionNumber, searchQuery]);
+  }, [bets, selectedCategory, selectedMarketId, selectedBetType, selectedSession, filterSelectionNumber, searchQuery, highStakesOnly]);
 
   // Aggregated breakdown: "How many people betted on what"
   const aggregatedNumbers = useMemo(() => {
@@ -168,6 +172,11 @@ export default function BidsExposureTab() {
       topNumber,
     };
   }, [filteredBets, aggregatedNumbers]);
+
+  // High-stake bets counter (any ticket >= ₹150, or Jodi >= ₹100)
+  const highStakeBetsCount = useMemo(() => {
+    return bets.filter(b => b.amount >= 150 || (b.betTypeCode === 'JODI' && b.amount >= 100)).length;
+  }, [bets]);
 
   // Category counts
   const categoryCounts = useMemo(() => {
@@ -229,6 +238,41 @@ export default function BidsExposureTab() {
           </button>
         </div>
       </div>
+
+      {/* High-Stake Alert Banner */}
+      {highStakeBetsCount > 0 && (
+        <div className="bg-gradient-to-r from-red-50 via-amber-50 to-orange-50 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <span className="p-2.5 bg-[#e42e2a] text-white rounded-xl font-bold shadow-sm animate-pulse">
+              <Flame className="w-5 h-5" />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-black text-gray-900 tracking-tight">
+                  High-Stake Exposure Alert
+                </h4>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-100 text-red-800 border border-red-200">
+                  {highStakeBetsCount} Flagged
+                </span>
+              </div>
+              <p className="text-xs text-gray-600 font-medium mt-0.5">
+                {highStakeBetsCount} {highStakeBetsCount === 1 ? 'ticket' : 'tickets'} exceed ₹150 (or ₹100 on Jodi). Review numbers before declaring results.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setHighStakesOnly(!highStakesOnly)}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all shadow-sm shrink-0 flex items-center justify-center gap-1.5 ${
+              highStakesOnly
+                ? 'bg-[#e42e2a] text-white'
+                : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            <Flame className="w-3.5 h-3.5 text-amber-500" />
+            <span>{highStakesOnly ? 'Show All Bets' : 'View High Stakes Only'}</span>
+          </button>
+        </div>
+      )}
 
       {/* 2. Top Metric Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -567,9 +611,21 @@ export default function BidsExposureTab() {
 
                     {/* Amount */}
                     <td className="px-4 py-3 text-right">
-                      <span className="font-black text-gray-900 text-sm">
-                        ₹{bet.amount.toLocaleString('en-IN')}
-                      </span>
+                      {bet.amount >= 150 || (bet.betTypeCode === 'JODI' && bet.amount >= 100) ? (
+                        <div className="flex flex-col items-end">
+                          <span className="font-black text-red-600 text-sm">
+                            ₹{bet.amount.toLocaleString('en-IN')}
+                          </span>
+                          <span className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wider text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 mt-0.5">
+                            <Flame className="w-2.5 h-2.5 text-amber-600" />
+                            High Stake
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="font-black text-gray-900 text-sm">
+                          ₹{bet.amount.toLocaleString('en-IN')}
+                        </span>
+                      )}
                     </td>
 
                     {/* Placed At */}

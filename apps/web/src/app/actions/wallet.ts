@@ -1,7 +1,7 @@
 'use server';
 
 import { db, wallets, transactions, ledgerEntries, bonusCampaigns, bonusClaims, systemSettings, deposits, users } from '@zenvora/shared/db';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, gte, ne } from 'drizzle-orm';
 import { getServerSession } from '../../lib/session';
 import { z } from 'zod';
 import { checkRateLimit, getClientIp } from '../../lib/rateLimit';
@@ -70,7 +70,7 @@ export async function getTransactionHistoryAction(page = 1, limit = 20) {
 
 const amountSchema = z.number().positive();
 
-export async function addMoneyAction(amountInput: number, utr: string) {
+export async function addMoneyAction(amountInput: number, utr: string, assignedUpiId?: string) {
   const ip = getClientIp();
   if (!checkRateLimit(ip, 'addMoney', 5, 60 * 1000)) {
     return { success: false, message: 'Too many requests' };
@@ -105,6 +105,30 @@ export async function addMoneyAction(amountInput: number, utr: string) {
       return { success: false, message: 'Deposits are currently disabled' };
     }
 
+    // Enforce Daily Deposit Limit (Max ₹5,000 per user per day)
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const todayDeposits = await db
+      .select({ amount: deposits.amountMinor })
+      .from(deposits)
+      .where(
+        and(
+          eq(deposits.userId, user.id),
+          gte(deposits.requestedAt, startOfToday),
+          ne(deposits.status, 'REJECTED')
+        )
+      );
+
+    const totalDepositedToday = todayDeposits.reduce((sum, d) => sum + Number(d.amount), 0);
+    if (totalDepositedToday + amount > 5000) {
+      const remainingLimit = Math.max(0, 5000 - totalDepositedToday);
+      return { 
+        success: false, 
+        message: `Daily deposit limit of ₹5,000 reached. You have already requested ₹${totalDepositedToday} today. Remaining limit: ₹${remainingLimit}.` 
+      };
+    }
+
     const walletArray = await db.select().from(wallets).where(eq(wallets.userId, user.id)).limit(1);
     const wallet = walletArray[0];
     if (!wallet) return { success: false, message: 'Wallet not found' };
@@ -122,6 +146,7 @@ export async function addMoneyAction(amountInput: number, utr: string) {
         amountMinor: amount,
         status: 'PENDING' as any,
         utr: cleanUtr,
+        adminNote: assignedUpiId ? `Assigned UPI: ${assignedUpiId}` : 'Assigned UPI: Primary',
         requestedAt: new Date(),
       }).returning();
       
@@ -367,7 +392,18 @@ export async function requestWithdrawalAction(amountInput: number, method: strin
 
     await writeAuditLog('WITHDRAWAL_REQUESTED', 'Transaction', { actorId: user.id, entityId: txnId, metadata: { amount, method } });
 
-    return { success: true, txnId, message: 'Withdrawal requested successfully' };
+    // Withdrawal Processing Window: 10:00 AM - 08:00 PM IST
+    const now = new Date();
+    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60 * 1000);
+    const istTime = new Date(utcTime + (5.5 * 60 * 60 * 1000));
+    const istHour = istTime.getHours();
+    const isWindowOpen = istHour >= 10 && istHour < 20;
+
+    const message = isWindowOpen
+      ? 'Withdrawal request submitted! Processing typically takes 30–60 minutes during banking hours.'
+      : 'Withdrawal request queued! Payouts are processed daily between 10:00 AM and 08:00 PM IST.';
+
+    return { success: true, txnId, isWindowOpen, message };
   } catch (error: any) {
     console.error('Error in requestWithdrawalAction:', error);
     await writeAuditLog('WITHDRAWAL_FAILED', 'Transaction', { success: false });

@@ -4,15 +4,15 @@ import { cookies } from 'next/headers';
 import { db, bets, users, markets, results, wallets, transactions, ledgerEntries } from '@zenvora/shared/db';
 import { eq, desc, and, isNull } from 'drizzle-orm';
 
-// Standard market multipliers
+// Standard market multipliers (Balanced 15% Platform Margin)
 const MULTIPLIERS: Record<string, number> = {
-  SINGLE_ANK: 9,
-  JODI: 90,
-  SINGLE_PATTI: 140,
-  DOUBLE_PATTI: 280,
-  TRIPLE_PATTI: 700,
-  HALF_SANGAM: 1000,
-  FULL_SANGAM: 10000,
+  SINGLE_ANK: 8.5,
+  JODI: 85,
+  SINGLE_PATTI: 130,
+  DOUBLE_PATTI: 260,
+  TRIPLE_PATTI: 650,
+  HALF_SANGAM: 850,
+  FULL_SANGAM: 8500,
 };
 
 export async function getWinningBetsPendingPayout() {

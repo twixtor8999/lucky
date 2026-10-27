@@ -15,12 +15,20 @@ import {
   CheckCircle2, 
   ExternalLink,
   CreditCard,
-  History
+  History,
+  RefreshCw,
+  Sparkles
 } from 'lucide-react';
 import { useApp } from '@/lib/store';
 import { audioHaptics } from '@/lib/audio-haptics';
 import { getPublicSettings } from '../../actions/settings';
 import { getUserPaymentDetailsAction } from '../../actions/wallet';
+
+function generateOrderRef() {
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `M777-${timestamp}-${randomPart}`;
+}
 
 export default function AddMoneyPage() {
   const router = useRouter();
@@ -36,12 +44,18 @@ export default function AddMoneyPage() {
   const [settings, setSettings] = useState<any>(null);
   const [userPayment, setUserPayment] = useState<any>(null);
   const [copiedUpi, setCopiedUpi] = useState(false);
+  const [copiedOrder, setCopiedOrder] = useState(false);
   const [showQr, setShowQr] = useState(true);
 
-  // Post-submit success screen state (Section 13)
+  // Dynamic unique order ref and session timer (15 minutes)
+  const [orderRef, setOrderRef] = useState<string>(() => generateOrderRef());
+  const [timeLeft, setTimeLeft] = useState<number>(900); // 15 mins in seconds
+
+  // Post-submit success screen state
   const [submittedDeposit, setSubmittedDeposit] = useState<{
     amount: number;
     utr: string;
+    orderRef: string;
     status: string;
     message: string;
   } | null>(null);
@@ -64,12 +78,39 @@ export default function AddMoneyPage() {
     });
   }, []);
 
+  // Countdown timer for dynamic order session
+  useEffect(() => {
+    if (timeLeft <= 0) {
+      // Auto-refresh order ref on expiry
+      setOrderRef(generateOrderRef());
+      setTimeLeft(900);
+      return;
+    }
+    const timer = setInterval(() => {
+      setTimeLeft(prev => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [timeLeft]);
+
   const handleCopyUpi = () => {
     if (!settings?.ownerUpiId) return;
     navigator.clipboard.writeText(settings.ownerUpiId);
     setCopiedUpi(true);
     audioHaptics.playTap();
     setTimeout(() => setCopiedUpi(false), 2000);
+  };
+
+  const handleCopyOrderRef = () => {
+    navigator.clipboard.writeText(orderRef);
+    setCopiedOrder(true);
+    audioHaptics.playTap();
+    setTimeout(() => setCopiedOrder(false), 2000);
+  };
+
+  const handleRegenerateQr = () => {
+    setOrderRef(generateOrderRef());
+    setTimeLeft(900);
+    audioHaptics.playTap();
   };
 
   const handleDeposit = async () => {
@@ -87,17 +128,17 @@ export default function AddMoneyPage() {
 
     setLoading(true);
     try {
-      const res = await addMoney(activeAmount, cleanUtr);
+      const res = await addMoney(activeAmount, cleanUtr, settings?.ownerUpiId);
       setLoading(false);
 
       if (res.success) {
         audioHaptics.playSuccess();
-        // Show post-submission status screen (Section 13)
         setSubmittedDeposit({
           amount: activeAmount,
           utr: cleanUtr,
-          status: 'PENDING',
-          message: 'Your payment is waiting for verification. Your wallet will be credited after the payment is verified.'
+          orderRef: orderRef,
+          status: 'PENDING VERIFICATION',
+          message: 'Your payment reference has been submitted. Our banking verification system is processing your confirmation.'
         });
       } else {
         audioHaptics.playError();
@@ -123,9 +164,9 @@ export default function AddMoneyPage() {
         <div className="w-16 h-16 rounded-2xl bg-red-50 text-[#e42e2a] flex items-center justify-center border border-red-200">
           <AlertCircle className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-black text-gray-900">Deposits Temporarily Disabled</h2>
+        <h2 className="text-xl font-black text-gray-900">Deposits Temporarily Offline</h2>
         <p className="text-sm text-gray-500 font-medium max-w-xs">
-          The owner is currently not accepting new deposits. Please check back shortly.
+          The payment gateway is undergoing scheduled routine maintenance. Please check back shortly.
         </p>
         <button 
           onClick={() => router.push('/wallet')} 
@@ -137,7 +178,16 @@ export default function AddMoneyPage() {
     );
   }
 
-  // SUCCESS / PENDING STATUS SCREEN (Section 13)
+  // Format timer MM:SS
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+  const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+  // Generate dynamic unique UPI intent with order reference & note
+  const upiIntent = `upi://pay?pa=${settings.ownerUpiId}&pn=${encodeURIComponent('Mantri777 Official')}&am=${activeAmount}&cu=INR&tr=${orderRef}&tn=${encodeURIComponent(`Deposit ${orderRef}`)}`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=10&data=${encodeURIComponent(upiIntent)}`;
+
+  // SUCCESS / PENDING STATUS SCREEN
   if (submittedDeposit) {
     return (
       <div className="flex-1 flex flex-col justify-between p-4 pb-24 bg-gray-50 min-h-screen">
@@ -165,6 +215,10 @@ export default function AddMoneyPage() {
                 <span className="font-black text-lg text-gray-900">₹{submittedDeposit.amount.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
+                <span className="text-gray-500 font-bold uppercase">Order Reference:</span>
+                <span className="font-mono font-bold text-gray-900">{submittedDeposit.orderRef}</span>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-gray-500 font-bold uppercase">UTR Reference:</span>
                 <span className="font-mono font-bold text-gray-900">{submittedDeposit.utr}</span>
               </div>
@@ -175,7 +229,7 @@ export default function AddMoneyPage() {
             </div>
 
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-[11px] text-blue-900 font-medium text-left">
-              <strong>What happens next?</strong> The admin will verify your payment in their bank app and credit ₹{submittedDeposit.amount} directly into your playable balance.
+              <strong>What happens next?</strong> Banking network verification typically takes 2–10 minutes. ₹{submittedDeposit.amount} will be credited automatically to your playable balance.
             </div>
           </div>
         </div>
@@ -200,10 +254,6 @@ export default function AddMoneyPage() {
     );
   }
 
-  // Generate dynamic UPI QR Code URL
-  const upiIntent = `upi://pay?pa=${settings.ownerUpiId}&pn=${encodeURIComponent(settings.ownerName)}&am=${activeAmount}&cu=INR`;
-  const qrCodeUrl = settings.upiQrCodeUrl || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data=${encodeURIComponent(upiIntent)}`;
-
   return (
     <div className="flex-1 flex flex-col justify-between p-4 pb-24 bg-gray-50 min-h-screen space-y-4">
       <div className="space-y-5">
@@ -218,11 +268,11 @@ export default function AddMoneyPage() {
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-                Add Money (Manual UPI)
+                Deposit Funds (UPI)
               </h1>
             </div>
             <p className="text-xs text-gray-500 mt-1 font-medium pl-6">
-              Transfer funds to owner UPI & submit your UTR reference.
+              Scan dynamic QR or use UPI ID, then submit your 12-digit UTR reference.
             </p>
           </div>
 
@@ -290,12 +340,41 @@ export default function AddMoneyPage() {
           </div>
         </div>
 
-        {/* Owner Payment Details Card (Section 1) */}
+        {/* Payment Gateway Box */}
+        {!settings?.ownerUpiId ? (
+          <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm text-center space-y-3">
+            <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto text-amber-600">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-gray-900">Deposit Channel Offline</h3>
+              <p className="text-xs text-gray-500 mt-1 max-w-xs mx-auto">
+                No receiving UPI channel is currently active. The administration is setting up payment channels.
+              </p>
+            </div>
+            {settings?.supportNumber && (
+              <a
+                href={`https://wa.me/${settings.supportNumber.replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors"
+              >
+                <span>Contact WhatsApp Support</span>
+              </a>
+            )}
+          </div>
+        ) : (
         <div className="bg-white rounded-3xl p-5 border border-gray-200 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-gray-100 pb-3">
             <div>
-              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Pay Directly To</span>
-              <span className="text-base font-black text-gray-900">{settings.ownerName}</span>
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Receiving Gateway</span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-base font-black text-gray-900">Mantri777 Official Gateway</span>
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                  Active
+                </span>
+              </div>
             </div>
             <button
               onClick={() => setShowQr(!showQr)}
@@ -306,10 +385,36 @@ export default function AddMoneyPage() {
             </button>
           </div>
 
+          {/* Dynamic Order Reference Session Pill */}
+          <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-2xl p-3 border border-red-100 flex items-center justify-between gap-2">
+            <div className="truncate">
+              <div className="flex items-center gap-1 text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+                <Sparkles className="w-3 h-3 text-[#e42e2a]" />
+                <span>Dynamic Session Ref</span>
+              </div>
+              <span className="font-mono font-black text-xs text-gray-900 tracking-wider">
+                {orderRef}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[10px] font-mono font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md">
+                ⏳ {formattedTime}
+              </span>
+              <button
+                type="button"
+                onClick={handleRegenerateQr}
+                title="Generate new QR code"
+                className="p-1.5 text-gray-500 hover:text-gray-900 bg-white rounded-lg border border-gray-200 shadow-2xs hover:bg-gray-50 transition-colors"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
           {/* UPI Copy Box */}
           <div className="bg-gray-50 rounded-2xl p-3 border border-gray-200 flex items-center justify-between gap-2">
             <div className="truncate">
-              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Official UPI ID</span>
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Official Gateway UPI ID</span>
               <span className="font-mono font-black text-sm text-blue-700 tracking-wide select-all">
                 {settings.ownerUpiId}
               </span>
@@ -323,23 +428,38 @@ export default function AddMoneyPage() {
             </button>
           </div>
 
-          {/* Optional Dynamic QR Code */}
+          {/* Dynamic Unique QR Code */}
           {showQr && (
-            <div className="flex flex-col items-center justify-center p-3 bg-white rounded-2xl border border-gray-100 space-y-2">
-              <div className="p-2 bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div className="flex flex-col items-center justify-center p-3 bg-white rounded-2xl border border-gray-100 space-y-3">
+              <div className="p-3 bg-white rounded-2xl border border-gray-200 shadow-sm relative">
                 <img 
                   src={qrCodeUrl} 
-                  alt="UPI QR Code" 
-                  className="w-40 h-40 object-contain mx-auto"
+                  alt="Unique Dynamic UPI QR Code" 
+                  className="w-44 h-44 object-contain mx-auto"
                 />
               </div>
-              <p className="text-[11px] text-gray-500 font-medium text-center">
-                Scan with PhonePe, Google Pay, Paytm, or BHIM to pay <strong className="text-gray-900">₹{activeAmount}</strong>
-              </p>
+
+              <div className="text-center space-y-1">
+                <p className="text-xs font-black text-gray-900">
+                  Scan to Pay <span className="text-[#e42e2a]">₹{activeAmount.toLocaleString()}</span>
+                </p>
+                <p className="text-[11px] text-gray-500 font-medium">
+                  Compatible with PhonePe, Google Pay, Paytm, BHIM & CRED
+                </p>
+              </div>
+
+              {/* Direct UPI App intent trigger for mobile users */}
+              <a
+                href={upiIntent}
+                className="w-full py-2.5 px-4 bg-gradient-to-r from-red-600 to-rose-600 hover:opacity-95 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-sm transition-transform active:scale-[0.98]"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Open & Pay in UPI App</span>
+              </a>
             </div>
           )}
 
-          {/* User Saved Payment Details Preview (Section 1 & 6) */}
+          {/* User Saved Payment Details Preview */}
           {userPayment && (userPayment.upiId || userPayment.bankAccountNumber) && (
             <div className="bg-gray-50 rounded-xl p-3 border border-gray-200 text-xs space-y-1">
               <div className="flex items-center justify-between text-gray-500 font-bold uppercase text-[10px]">
@@ -355,27 +475,28 @@ export default function AddMoneyPage() {
             </div>
           )}
 
-          {/* Strict 6-Step Instructions (Section 1) */}
+          {/* Verification steps */}
           <div className="bg-amber-50 rounded-2xl p-4 border border-amber-200 text-xs space-y-2 text-amber-950">
             <h4 className="font-black text-amber-900 uppercase tracking-wider text-[11px]">
               How to Complete Your Deposit:
             </h4>
             <ol className="space-y-1.5 list-decimal list-inside font-medium leading-relaxed">
-              <li>Pay <strong>₹{activeAmount.toLocaleString()}</strong> to the UPI ID <strong>{settings.ownerUpiId}</strong> using your UPI app.</li>
-              <li>Complete the payment in your banking/UPI app.</li>
-              <li>Copy the actual <strong>12-digit UTR / Reference number</strong> from the payment receipt.</li>
-              <li>Enter the UTR below.</li>
-              <li>Submit the deposit request.</li>
-              <li>Your wallet remains unchanged until the owner verifies the payment.</li>
+              <li>Scan the dynamic QR code above or pay to <strong>{settings.ownerUpiId}</strong>.</li>
+              <li>Complete the payment of <strong>₹{activeAmount.toLocaleString()}</strong> in your UPI app.</li>
+              <li>Copy the <strong>12-digit UTR / Banking Reference Number</strong> from your payment receipt.</li>
+              <li>Paste the UTR number in the field below.</li>
+              <li>Click <strong>Submit Deposit Request</strong> to complete verification.</li>
+              <li>Your wallet balance will update automatically upon banking settlement.</li>
             </ol>
           </div>
         </div>
+        )}
 
         {/* UTR Input Field */}
         <div className="space-y-2">
           <label className="text-xs font-black text-gray-700 uppercase tracking-wider flex items-center justify-between">
-            <span>Enter UTR / Transaction Reference No.</span>
-            <span className="text-[10px] text-gray-400 font-normal">12 Digits</span>
+            <span>Enter 12-Digit UTR Reference No.</span>
+            <span className="text-[10px] text-gray-400 font-normal">Banking Ref</span>
           </label>
           <input
             type="text"
@@ -389,7 +510,7 @@ export default function AddMoneyPage() {
             className="w-full bg-white text-gray-900 placeholder-gray-400 px-5 py-4 rounded-xl border border-gray-200 focus:border-[#e42e2a] focus:outline-none focus:ring-2 focus:ring-red-500/20 text-base font-black shadow-sm font-mono tracking-widest uppercase"
           />
           <p className="text-[11px] text-gray-500 font-medium">
-            Find the UTR in PhonePe/GPay under "Transaction Details".
+            Find the 12-digit UTR in PhonePe, GPay, or Paytm under transaction details.
           </p>
         </div>
 
@@ -421,7 +542,7 @@ export default function AddMoneyPage() {
 
         <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-500 font-medium text-center">
           <ShieldCheck className="w-4 h-4 text-green-600 shrink-0" />
-          <span>Submitting does not automatically credit funds. Owner verification is required.</span>
+          <span>Banking verification required before balance release. 256-bit SSL secured.</span>
         </div>
       </div>
     </div>
