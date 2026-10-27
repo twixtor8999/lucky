@@ -1,7 +1,8 @@
-// Mantri777 Service Worker v1.0.1
-const CACHE_NAME = 'mantri777-shell-v2';
+// Mantri777 Service Worker v1.0.2
+const CACHE_NAME = 'mantri777-shell-v3';
 const STATIC_ASSETS = [
   '/',
+  '/?app=true',
   '/manifest.webmanifest',
   '/manifest.json',
   '/offline.html',

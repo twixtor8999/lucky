@@ -115,8 +115,21 @@ export default function PwaManager({ children }: { children?: React.ReactNode })
       return;
     }
 
-    // Check deferredPrompt first
-    const prompt = deferredPrompt || (window as any).__PWA_DEFERRED_PROMPT__;
+    // Check deferredPrompt first or wait briefly if Chrome is still warming up
+    let prompt = deferredPrompt || (window as any).__PWA_DEFERRED_PROMPT__;
+    if (!prompt) {
+      // Give beforeinstallprompt up to 800ms to resolve if user clicked immediately after page load
+      prompt = await new Promise((resolve) => {
+        const timer = setTimeout(() => resolve(null), 800);
+        const onReady = () => {
+          clearTimeout(timer);
+          window.removeEventListener('pwa-prompt-ready', onReady);
+          resolve((window as any).__PWA_DEFERRED_PROMPT__);
+        };
+        window.addEventListener('pwa-prompt-ready', onReady, { once: true });
+      });
+    }
+
     if (prompt) {
       try {
         await prompt.prompt();
@@ -141,6 +154,14 @@ export default function PwaManager({ children }: { children?: React.ReactNode })
 
     // Fallback: If prompt not ready yet on Android/Desktop
     setShowGenericGuide(true);
+  };
+
+  const openInChrome = () => {
+    if (typeof window !== 'undefined') {
+      const cleanUrl = window.location.host + window.location.pathname + window.location.search;
+      const intentUrl = `intent://${cleanUrl}#Intent;scheme=https;package=com.android.chrome;end`;
+      window.location.href = intentUrl;
+    }
   };
 
   return (
@@ -216,7 +237,7 @@ export default function PwaManager({ children }: { children?: React.ReactNode })
         </div>
       )}
 
-      {/* Generic Browser Guide Modal */}
+      {/* Generic Browser / Mobile Guide Modal */}
       {showGenericGuide && (
         <div className="fixed inset-0 z-[200] bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl w-full max-w-sm p-6 text-gray-900 shadow-2xl space-y-4 animate-in slide-in-from-bottom duration-300 relative">
@@ -233,8 +254,18 @@ export default function PwaManager({ children }: { children?: React.ReactNode })
               </div>
               <div>
                 <h3 className="font-black text-base text-gray-900">Add Mantri777 to Phone</h3>
-                <p className="text-xs text-gray-500 font-bold">2 Quick Steps to Install</p>
+                <p className="text-xs text-gray-500 font-bold">Install official app on Home Screen</p>
               </div>
+            </div>
+
+            {/* Quick Action: Open in Google Chrome for WhatsApp/In-App users */}
+            <div className="pt-1">
+              <button
+                onClick={openInChrome}
+                className="w-full bg-gray-900 hover:bg-black text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+              >
+                <span>🌐 Open in Google Chrome</span>
+              </button>
             </div>
 
             {/* Step-by-Step Instructions */}
@@ -246,7 +277,7 @@ export default function PwaManager({ children }: { children?: React.ReactNode })
                 <div>
                   <p className="font-black text-gray-900">Tap Browser Menu (Top-Right)</p>
                   <p className="text-[11px] text-gray-500 mt-0.5 font-normal">
-                    Tap the <span className="font-black text-gray-900">⋮ (3 dots)</span> at the top right of your browser.
+                    Tap the <span className="font-black text-gray-900">⋮ (3 dots)</span> at the top right of Chrome or browser.
                   </p>
                 </div>
               </div>
@@ -270,18 +301,26 @@ export default function PwaManager({ children }: { children?: React.ReactNode })
                 <div>
                   <p className="font-black text-emerald-900">Instant Launch</p>
                   <p className="text-[11px] text-emerald-700 mt-0.5 font-normal">
-                    Mantri777 icon appears on your home screen ready to play with 0 lag.
+                    Mantri777 icon appears on your phone screen ready to play with 0 lag.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="pt-1">
+            <div className="pt-1 flex gap-2">
               <button
-                onClick={() => setShowGenericGuide(false)}
+                onClick={() => {
+                  const prompt = (window as any).__PWA_DEFERRED_PROMPT__;
+                  if (prompt) {
+                    setShowGenericGuide(false);
+                    prompt.prompt().catch(() => {});
+                  } else {
+                    setShowGenericGuide(false);
+                  }
+                }}
                 className="w-full bg-[#e22e28] text-white py-3.5 rounded-xl font-black text-sm tracking-wide shadow-lg shadow-red-500/20 hover:bg-red-700 active:scale-95 transition-all"
               >
-                Got It — Tap ⋮ at Top Right
+                Understood — Ready
               </button>
             </div>
           </div>

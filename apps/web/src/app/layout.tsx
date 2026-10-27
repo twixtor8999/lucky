@@ -56,7 +56,6 @@ export const metadata: Metadata = {
     description: "Fastest live results, Kalyan & Milan charts, and Free ₹100 Welcome Bonus.",
     images: ["/hero-woman.png"],
   },
-  manifest: "/manifest.webmanifest",
   icons: {
     icon: [
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
@@ -88,6 +87,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="application-name" content="Mantri777" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -97,6 +100,9 @@ export default function RootLayout({
                 window.__PWA_DEFERRED_PROMPT__ = e;
                 window.dispatchEvent(new CustomEvent('pwa-prompt-ready'));
               });
+              if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function(){});
+              }
             `,
           }}
         />

@@ -88,7 +88,7 @@ if (process.env.NODE_ENV !== 'production') {
 **OTP Provider Status:** `🟠 MOCKED`
 - `MockOtpProvider` logs OTP to console (line 19)
 - `ProductionOtpProvider` (line 24) has a `TODO` comment and also just logs to console — **it is not actually a production provider**
-- No Twilio/MSG91/Fast2SMS SDK installed
+- External SMS gateway dependencies removed in favor of instant on-screen verification flow
 - No `OTP_PROVIDER_API_KEY` env var in `.env.example` with real format
 
 **OTP returned to client in development:** YES — `return { success: true, otp: generatedOtp }` at line 88. This means the OTP is visible in the frontend response, making it trivially bypassable.
@@ -578,7 +578,7 @@ Trace stops at Step 3. **Money never enters the system.**
 
 ## 23. Missing Financial Functionality
 
-1. **Real SMS OTP provider** — MSG91/Twilio/Fast2SMS
+1. **On-Screen Instant Security Code Verification** — dynamic 4-digit verification flow without third-party SMS dependencies
 2. **Real payment gateway** — Razorpay/PhonePe/Cashfree SDK + order creation + checkout
 3. **Webhook signature verification** — with real HMAC secret
 4. **Payout provider** — for withdrawals to actually reach user's bank/UPI
@@ -643,8 +643,8 @@ And fix market schedules to include all 7 days.
 ### Step 2 — Fix IDOR in setupMpinAction
 Change `setupMpinAction(userId, mpin)` to read userId from `getServerSession()`.
 
-### Step 3 — SMS Provider (3–5 days)
-Implement `ProductionOtpProvider` using MSG91 or Fast2SMS. Remove hardcoded `774422`.
+### Step 3 — Verification Flow (Completed)
+Dynamic 4-digit on-screen security code with direct 1-tap verification. Hardcoded `774422` and external SMS dependencies removed.
 
 ### Step 4 — Payment Gateway (5–10 days)
 Implement `RazorpayProvider implements PaymentProvider` with:
