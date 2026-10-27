@@ -733,7 +733,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 
   const getMarketBySlug = (slug: string) => {
-    return markets.find((m) => m.slug === slug);
+    if (!slug) return undefined;
+    const clean = slug.toLowerCase().trim();
+    return markets.find((m) => 
+      m.slug?.toLowerCase() === clean || 
+      m.id?.toLowerCase() === clean || 
+      m.name?.toLowerCase().replace(/\s+/g, '-') === clean ||
+      m.name?.toLowerCase() === clean
+    );
   };
 
   return (

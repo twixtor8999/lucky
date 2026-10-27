@@ -12,7 +12,7 @@ export default function PlayMarketPage() {
   const params = useParams();
   const router = useRouter();
   const slug = params?.slug as string;
-  const { getMarketBySlug, placeBet, wallet, user } = useApp();
+  const { getMarketBySlug, placeBet, wallet, user, markets } = useApp();
 
   const market = getMarketBySlug(slug);
 
@@ -72,13 +72,26 @@ export default function PlayMarketPage() {
     return () => clearInterval(interval);
   }, [market?.closeTime]);
 
+  if (markets.length === 0) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-gray-50 min-h-screen">
+        <div className="w-10 h-10 border-4 border-[#e42e2a] border-t-transparent rounded-full animate-spin mb-3"></div>
+        <p className="text-sm font-bold text-gray-600">Loading Market Board...</p>
+      </div>
+    );
+  }
+
   if (!market) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-gray-50 min-h-screen">
-        <h2 className="text-xl font-bold text-gray-900">Market Not Found</h2>
-        <button onClick={() => router.back()} className="text-[#e42e2a] text-sm mt-3 font-semibold hover:underline">
-          Go Back
-        </button>
+        <div className="w-14 h-14 rounded-2xl bg-white border border-gray-200 flex items-center justify-center text-[#e42e2a] mb-3 shadow-xs">
+          <AlertCircle className="w-7 h-7" />
+        </div>
+        <h2 className="text-xl font-black text-gray-900">Market Not Found</h2>
+        <p className="text-xs text-gray-500 mt-1">This market is either closed or undergoing result calculation.</p>
+        <Link href="/markets" className="bg-[#e42e2a] text-white px-6 py-2.5 rounded-xl text-xs font-bold mt-4 shadow-sm">
+          Browse Live Markets
+        </Link>
       </div>
     );
   }

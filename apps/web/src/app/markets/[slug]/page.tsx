@@ -11,9 +11,18 @@ export default function MarketDetailPage() {
   const params = useParams();
   const router = useRouter();
   const slug = params?.slug as string;
-  const { getMarketBySlug, results } = useApp();
+  const { getMarketBySlug, results, markets } = useApp();
 
   const market = getMarketBySlug(slug);
+
+  if (markets.length === 0) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-gray-50 min-h-screen">
+        <div className="w-10 h-10 border-4 border-[#e42e2a] border-t-transparent rounded-full animate-spin mb-3"></div>
+        <p className="text-sm font-bold text-gray-600">Loading Market Details...</p>
+      </div>
+    );
+  }
 
   if (!market) {
     return (
