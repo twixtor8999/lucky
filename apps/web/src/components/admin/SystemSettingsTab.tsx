@@ -155,9 +155,9 @@ export default function SystemSettingsTab() {
         dailyTxnLimit: Number(newDailyLimit) || 20,
       });
 
-      if (res.success && res.pool) {
+      if (res.success) {
         setUpiPool(res.pool);
-        const newCap = res.pool.filter(p => p.active).reduce((sum, p) => sum + p.dailyTxnLimit, 0);
+        const newCap = res.pool.filter((p: UpiAccount) => p.active).reduce((sum: number, p: UpiAccount) => sum + p.dailyTxnLimit, 0);
         setTotalCapacity(newCap);
         
         // Reset form & close modal

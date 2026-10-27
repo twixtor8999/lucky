@@ -217,6 +217,10 @@ export async function saveUpiPoolAction(pool: UpiAccount[]) {
   }
 }
 
+export type AddUpiResult =
+  | { success: true; pool: UpiAccount[]; newAccount: UpiAccount }
+  | { success: false; error: string };
+
 /**
  * Dedicated Action: Directly Add a New UPI Account & Persist to DB
  */
@@ -225,7 +229,7 @@ export async function addUpiAccountAction(account: {
   payeeName: string;
   bankName?: string;
   dailyTxnLimit?: number;
-}) {
+}): Promise<AddUpiResult> {
   const authCookie = cookies().get('admin_auth');
   if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
 
@@ -260,11 +264,13 @@ export async function addUpiAccountAction(account: {
 
     const updatedPool = [...currentPool, newAccount];
     const saveRes = await saveUpiPoolAction(updatedPool);
-    if (!saveRes.success) return saveRes;
+    if (!saveRes.success) {
+      return { success: false, error: saveRes.error || 'Failed to save UPI pool' };
+    }
 
     return { success: true, pool: updatedPool, newAccount };
   } catch (err: any) {
-    return { success: false, error: err.message };
+    return { success: false, error: err.message || 'Failed to add UPI account' };
   }
 }
 
