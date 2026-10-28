@@ -10,7 +10,9 @@ function OtpContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const phone = searchParams.get('phone') || '9876543210';
+  const paramCode = searchParams.get('code') || '';
   const { verifyOtp, requestOtp, activeOtpCode } = useApp();
+  const displayCode = activeOtpCode || paramCode;
 
   const [otp, setOtp] = useState(['', '', '', '']);
   const [countdown, setCountdown] = useState(30);
@@ -18,12 +20,15 @@ function OtpContent() {
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
+    if (displayCode && displayCode.length === 4) {
+      setOtp(displayCode.split(''));
+    }
     inputsRef.current[0]?.focus();
     const timer = setInterval(() => {
       setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [displayCode]);
 
   const handleChange = (index: number, val: string) => {
     const digit = val.replace(/\D/g, '').slice(-1);
@@ -76,7 +81,7 @@ function OtpContent() {
   };
 
   const autoFillTestOtp = () => {
-    const code = activeOtpCode || '1234';
+    const code = displayCode || '1234';
     const split = code.split('');
     setOtp(split);
     audioHaptics.playTap();
@@ -123,7 +128,7 @@ function OtpContent() {
             className="text-[12px] bg-red-50 border border-red-200 text-[#e42e2a] px-4 py-2 rounded-xl hover:bg-red-100 transition-colors flex items-center gap-2 font-bold shadow-sm"
           >
             <span>⚡ Security Code:</span>
-            <span className="font-mono font-black text-base tracking-wider">{activeOtpCode || '••••'}</span>
+            <span className="font-mono font-black text-base tracking-wider">{displayCode || '••••'}</span>
             <span className="text-[10px] text-gray-500 font-normal">(Tap to Auto-fill)</span>
           </button>
         </div>

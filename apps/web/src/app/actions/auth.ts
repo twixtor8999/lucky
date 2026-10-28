@@ -16,16 +16,16 @@ const otpSchema = z.string().regex(/^[0-9]{4,6}$/, 'Verification code must be 4 
 const mpinSchema = z.string().regex(/^[0-9]{4,6}$/, 'MPIN must be 4 to 6 digits');
 
 export async function requestOtpAction(phoneInput: string) {
-  const ip = getClientIp();
-  if (!checkRateLimit(ip, 'requestOtp', 10, 60 * 1000)) {
-    return { success: false, message: 'Too many requests. Please wait a moment.' };
-  }
-
   const parseResult = phoneSchema.safeParse(phoneInput);
   if (!parseResult.success) {
     return { success: false, message: 'Please enter a valid 10-digit mobile number' };
   }
   const phone = parseResult.data;
+
+  // Rate limit by phone number so shared cellular IPs (Jio/Airtel) don't block users
+  if (!checkRateLimit(phone, 'requestOtp', 30, 60 * 1000)) {
+    return { success: false, message: 'Too many requests for this number. Please wait a moment.' };
+  }
 
   // 1. Check if user already exists
   const existingUserArray = await db.select().from(users).where(eq(users.phone, phone)).limit(1);
@@ -75,11 +75,6 @@ export async function requestOtpAction(phoneInput: string) {
 }
 
 export async function verifyOtpAction(phoneInput: string, otpInput: string) {
-  const ip = getClientIp();
-  if (!checkRateLimit(ip, 'verifyOtp', 5, 60 * 1000)) { // 5 per 1 min
-    return { success: false, message: 'Too many attempts.' };
-  }
-
   const phoneRes = phoneSchema.safeParse(phoneInput);
   const otpRes = otpSchema.safeParse(otpInput);
   if (!phoneRes.success || !otpRes.success) {
@@ -87,6 +82,10 @@ export async function verifyOtpAction(phoneInput: string, otpInput: string) {
   }
   const phone = phoneRes.data;
   const otp = otpRes.data;
+
+  if (!checkRateLimit(phone, 'verifyOtp', 20, 60 * 1000)) {
+    return { success: false, message: 'Too many attempts. Please wait a moment.' };
+  }
 
   try {
     // 1. Verify OTP from DB

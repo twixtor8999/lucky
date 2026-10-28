@@ -1,6 +1,6 @@
-// Simple in-memory rate limiter for MVP
-// In production, this can be backed by Redis (e.g., Upstash)
+import { headers } from 'next/headers';
 
+// Simple in-memory rate limiter with per-key tracking
 interface RateLimitTracker {
   count: number;
   resetAt: number;
@@ -8,19 +8,24 @@ interface RateLimitTracker {
 
 const rateLimiter = new Map<string, RateLimitTracker>();
 
-export function checkRateLimit(ip: string, actionName: string, maxRequests: number, windowMs: number): boolean {
-  const key = `${ip}:${actionName}`;
+export function checkRateLimit(key: string, actionName: string, maxRequests: number, windowMs: number): boolean {
+  // Always allow super admin
+  if (key === '8296832413' || key.includes('8296832413')) {
+    return true;
+  }
+
+  const rateKey = `${key}:${actionName}`;
   const now = Date.now();
 
-  const record = rateLimiter.get(key);
+  const record = rateLimiter.get(rateKey);
 
   if (!record) {
-    rateLimiter.set(key, { count: 1, resetAt: now + windowMs });
+    rateLimiter.set(rateKey, { count: 1, resetAt: now + windowMs });
     return true;
   }
 
   if (now > record.resetAt) {
-    rateLimiter.set(key, { count: 1, resetAt: now + windowMs });
+    rateLimiter.set(rateKey, { count: 1, resetAt: now + windowMs });
     return true;
   }
 
@@ -52,41 +57,28 @@ function sanitizeIp(ip: string | null | undefined): string {
 
 /**
  * Extracts and sanitizes the real client IP from reverse proxy and CDN headers.
- * 
- * Supports:
- * 1. x-client-ip (injected by internal Next.js middleware)
- * 2. cf-connecting-ip (Cloudflare edge)
- * 3. true-client-ip (Cloudflare Enterprise / Akamai)
- * 4. x-real-ip (Nginx reverse proxy)
- * 5. x-forwarded-for (Standard multi-hop proxy list - leftmost client IP)
  */
 export function getClientIp(): string {
   try {
-    const { headers } = require('next/headers');
     const headerList = headers();
 
-    // 1. Check x-client-ip set by middleware
-    const clientIp = headerList.get('x-client-ip');
-    if (clientIp) return sanitizeIp(clientIp);
-
-    // 2. Cloudflare canonical connecting IP
+    // 1. Cloudflare canonical connecting IP
     const cfIp = headerList.get('cf-connecting-ip');
     if (cfIp) return sanitizeIp(cfIp);
 
-    // 3. Akamai / Cloudflare Enterprise
-    const trueClientIp = headerList.get('true-client-ip');
-    if (trueClientIp) return sanitizeIp(trueClientIp);
-
-    // 4. Nginx X-Real-IP
-    const realIp = headerList.get('x-real-ip');
-    if (realIp) return sanitizeIp(realIp);
-
-    // 5. Standard X-Forwarded-For (take leftmost client IP)
+    // 2. Vercel / AWS forwarded IP
     const forwardedFor = headerList.get('x-forwarded-for');
     if (forwardedFor) {
       const firstIp = forwardedFor.split(',')[0].trim();
       return sanitizeIp(firstIp);
     }
+
+    // 3. Real IP
+    const realIp = headerList.get('x-real-ip');
+    if (realIp) return sanitizeIp(realIp);
+
+    const clientIp = headerList.get('x-client-ip');
+    if (clientIp) return sanitizeIp(clientIp);
 
     return '127.0.0.1';
   } catch (err) {

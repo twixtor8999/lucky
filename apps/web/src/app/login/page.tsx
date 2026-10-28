@@ -51,7 +51,8 @@ export default function LoginPage() {
       if ((res as any).requiresMpin) {
         setShowMpin(true);
       } else {
-        router.push(`/login/otp?phone=${cleanPhone}`);
+        const code = (res as any).code || '';
+        router.push(`/login/otp?phone=${cleanPhone}${code ? `&code=${code}` : ''}`);
       }
     } else {
       showToast('error', 'Request Failed', res.message || 'Could not send verification code');
