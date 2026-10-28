@@ -6,7 +6,6 @@ apps/web/.next/
 out/
 
 # Generated files
-package-lock.json
 packages/shared/src/db/schema.js
 packages/shared/src/db/schema.d.ts
 
