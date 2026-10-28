@@ -4,14 +4,15 @@ import * as schema from './schema';
 import dns from 'dns';
 
 // Ensure Neon hostnames resolve reliably across all networks (e.g. if local Wi-Fi router DNS refuses external subdomains)
-if (typeof dns !== 'undefined' && dns.lookup) {
-  const origLookup = dns.lookup;
+if (process.env.NODE_ENV !== 'production' && typeof dns !== 'undefined' && (dns as any).lookup) {
+  const origLookup = dns.lookup.bind(dns);
   const dnsPromises = dns.promises;
   try {
     dnsPromises.setServers(['8.8.8.8', '1.1.1.1']);
   } catch {}
 
-  dns.lookup = function (hostname: any, options: any, callback: any) {
+  // @ts-ignore
+  (dns as any).lookup = function (hostname: any, options: any, callback: any) {
     if (typeof options === 'function') {
       callback = options;
       options = {};
