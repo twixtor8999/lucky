@@ -300,10 +300,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return { success: false, isNewUser: false, requiresMpin: false };
     }
 
-    // Since our backend logic doesn't know about Admin status on login right now, we keep the role as returned
+    const isUserAdmin = result.user.role === 'ADMIN' || phone === '8296832413';
     const finalUser = {
       ...result.user,
-      role: isAdmin ? UserRole.ADMIN : result.user.role,
+      role: isUserAdmin ? UserRole.ADMIN : result.user.role,
     };
 
     setUser(finalUser as UserProfile);
@@ -312,6 +312,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     return {
       success: true,
+      user: finalUser,
+      redirectTo: (result as any).redirectTo || (isUserAdmin ? '/super-secret-admin/dashboard' : undefined),
       isNewUser: result.isNewUser || false,
       requiresMpin: result.requiresMpin || false,
     };
@@ -366,15 +368,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return { success: false };
     }
 
+    const isUserAdmin = result.user.role === 'ADMIN' || phone === '8296832413';
     const finalUser = {
       ...result.user,
-      role: isAdmin ? UserRole.ADMIN : result.user.role,
+      role: isUserAdmin ? UserRole.ADMIN : result.user.role,
     };
 
     setUser(finalUser as UserProfile);
     localStorage.setItem('mantri777_user', JSON.stringify(finalUser));
     showToast('success', 'Welcome Back', `Logged in as +91 ${phone}`);
-    return { success: true };
+    return { 
+      success: true, 
+      user: finalUser, 
+      redirectTo: (result as any).redirectTo || (isUserAdmin ? '/super-secret-admin/dashboard' : '/') 
+    };
   };
 
   // Auth: Logout

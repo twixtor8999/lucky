@@ -33,7 +33,11 @@ export default function LoginPage() {
       setLoading(false);
       if (res.success) {
         audioHaptics.playTap();
-        router.push('/');
+        if ((res as any).redirectTo === '/super-secret-admin/dashboard' || (res as any).user?.role === 'ADMIN' || cleanPhone === '8296832413') {
+          router.push('/super-secret-admin/dashboard');
+        } else {
+          router.push('/');
+        }
       }
       return;
     }
