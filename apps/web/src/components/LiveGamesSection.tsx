@@ -12,6 +12,8 @@ interface GameItem {
   result: string;
   isSpecial: boolean;
   isOpen: boolean;
+  openTime?: string;
+  closeTime?: string;
 }
 
 interface LiveGamesSectionProps {
@@ -76,6 +78,11 @@ export default function LiveGamesSection({
                     <div className="text-[20px] md:text-[22px] font-black tracking-widest text-[#111]">
                       {market.result}
                     </div>
+                    {(market.openTime || market.closeTime) && (
+                      <div className="text-[11px] font-semibold text-gray-500 mt-1">
+                        Open: <span className="text-gray-900 font-bold">{market.openTime}</span> | Close: <span className="text-gray-900 font-bold">{market.closeTime}</span>
+                      </div>
+                    )}
                   </div>
                   {market.isOpen ? (
                     <Link

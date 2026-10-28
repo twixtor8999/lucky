@@ -6,12 +6,18 @@ import { MarketStatus, Market } from '@zenvora/shared';
 import crypto from 'crypto';
 
 const SEED_MARKETS = [
-  { slug: 'kalyan-morning', name: 'Kalyan Morning', status: 'OPEN', openTime: '09:00', closeTime: '12:05' },
-  { slug: 'milan-day', name: 'Milan Day', status: 'OPEN', openTime: '15:15', closeTime: '17:15' },
-  { slug: 'rajdhani-day', name: 'Rajdhani Day', status: 'OPEN', openTime: '15:00', closeTime: '17:00' },
-  { slug: 'kalyan', name: 'Kalyan', status: 'OPEN', openTime: '16:00', closeTime: '18:00' },
-  { slug: 'milan-night', name: 'Milan Night', status: 'OPEN', openTime: '21:05', closeTime: '23:05' },
-  { slug: 'main-bazar', name: 'Main Bazar', status: 'OPEN', openTime: '21:40', closeTime: '00:05' },
+  { slug: 'kalyan-morning', name: 'Kalyan Morning', status: 'OPEN', openTime: '09:00', closeTime: '10:00' },
+  { slug: 'milan-day', name: 'Milan Day', status: 'OPEN', openTime: '10:05', closeTime: '11:05' },
+  { slug: 'rajdhani-day', name: 'Rajdhani Day', status: 'OPEN', openTime: '11:10', closeTime: '12:10' },
+  { slug: 'kalyan', name: 'Kalyan Day', status: 'OPEN', openTime: '13:00', closeTime: '14:00' },
+  { slug: 'main-bazar', name: 'Main Bazaar', status: 'OPEN', openTime: '14:05', closeTime: '15:05' },
+  { slug: 'omkar-day', name: 'Omkar Day', status: 'OPEN', openTime: '16:00', closeTime: '17:00' },
+  { slug: 'shree-ganesh', name: 'Shree Ganesh', status: 'OPEN', openTime: '17:05', closeTime: '18:05' },
+  { slug: 'time-bazaar', name: 'Time Bazaar', status: 'OPEN', openTime: '18:10', closeTime: '18:50' },
+  { slug: 'milan-night', name: 'Milan Night', status: 'OPEN', openTime: '19:00', closeTime: '20:00' },
+  { slug: 'shridevi-night', name: 'Shridevi Night', status: 'OPEN', openTime: '20:05', closeTime: '20:50' },
+  { slug: 'kalyan-night', name: 'Kalyan Night', status: 'OPEN', openTime: '21:00', closeTime: '21:50' },
+  { slug: 'omkar-night', name: 'Omkar Night', status: 'OPEN', openTime: '22:00', closeTime: '22:40' },
 ];
 
 export async function seedMarketsAction() {
@@ -113,6 +119,8 @@ export async function getMarketsAction() {
       currentCloseTime: sched ? sched.closesAt : '00:00:00',
     };
   });
+
+  result.sort((a, b) => (a.openTime || '99').localeCompare(b.openTime || '99'));
 
   return { success: true, markets: result };
 }

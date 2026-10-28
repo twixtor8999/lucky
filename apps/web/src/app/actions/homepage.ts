@@ -4,6 +4,18 @@ import { db, markets, marketSchedules, results } from '@zenvora/shared/db';
 import { desc } from 'drizzle-orm';
 import { parseSlotMinutes, getISTDateAndTime, getDailyTopWinners } from '@/lib/time-utils';
 
+function formatTo12Hour(timeStr?: string | null): string {
+  if (!timeStr) return '';
+  const [hStr, mStr] = timeStr.split(':');
+  let hour = parseInt(hStr, 10);
+  const minute = mStr || '00';
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12;
+  if (hour === 0) hour = 12;
+  const hourFormatted = String(hour).padStart(2, '0');
+  return `${hourFormatted}:${minute} ${ampm}`;
+}
+
 export async function getLiveHomepageData() {
   const allMarkets = await db.select().from(markets);
   const schedules = await db.select().from(marketSchedules);
@@ -47,8 +59,8 @@ export async function getLiveHomepageData() {
       isOpen = latestResult?.status === 'OPEN_PUBLISHED';
     }
 
-    const openTimeStr = sched ? sched.opensAt.slice(0, 5) : '09:00';
-    const closeTimeStr = sched ? sched.closesAt.slice(0, 5) : '12:00';
+    const openTimeStr = sched ? formatTo12Hour(sched.opensAt) : '09:00 AM';
+    const closeTimeStr = sched ? formatTo12Hour(sched.closesAt) : '10:00 AM';
 
     return {
       id: market.id,
@@ -59,13 +71,18 @@ export async function getLiveHomepageData() {
       isOpen,
       openTime: openTimeStr,
       closeTime: closeTimeStr,
+      rawOpensAt: sched ? sched.opensAt : '99:99:99',
     };
   });
 
   const topWinners = getDailyTopWinners(dateStr);
 
+  const mainGames = formattedMarkets
+    .filter(m => !m.name.toLowerCase().includes('starline') && !m.name.toLowerCase().includes('jackpot'))
+    .sort((a, b) => a.rawOpensAt.localeCompare(b.rawOpensAt));
+
   return {
-    mainGames: formattedMarkets.filter(m => !m.name.toLowerCase().includes('starline') && !m.name.toLowerCase().includes('jackpot')),
+    mainGames,
     starlineGames: formattedMarkets.filter(m => m.name.toLowerCase().includes('starline')),
     jackpotGames: formattedMarkets.filter(m => m.name.toLowerCase().includes('jackpot')),
     topWinners,
