@@ -9,8 +9,10 @@ import { audioHaptics } from '@/lib/audio-haptics';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { requestOtp, showToast } = useApp();
+  const { requestOtp, loginWithMpin, showToast } = useApp();
   const [phone, setPhone] = useState('');
+  const [mpin, setMpin] = useState('');
+  const [showMpin, setShowMpin] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,13 +23,32 @@ export default function LoginPage() {
       return;
     }
 
+    if (showMpin) {
+      if (mpin.length !== 4) {
+        showToast('error', 'Invalid MPIN', 'MPIN must be 4 digits');
+        return;
+      }
+      setLoading(true);
+      const res = await loginWithMpin(cleanPhone, mpin);
+      setLoading(false);
+      if (res.success) {
+        audioHaptics.playTap();
+        router.push('/');
+      }
+      return;
+    }
+
     setLoading(true);
     const res = await requestOtp(cleanPhone);
     setLoading(false);
 
     if (res.success) {
       audioHaptics.playTap();
-      router.push(`/login/otp?phone=${cleanPhone}`);
+      if ((res as any).requiresMpin) {
+        setShowMpin(true);
+      } else {
+        router.push(`/login/otp?phone=${cleanPhone}`);
+      }
     } else {
       showToast('error', 'Request Failed', res.message || 'Could not send verification code');
     }
@@ -41,53 +62,105 @@ export default function LoginPage() {
           M
         </div>
 
-        <h1 className="text-2xl font-black text-gray-900 tracking-tight">Login to Mantri777</h1>
+        <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+          {showMpin ? 'Enter Secret MPIN' : 'Login to Mantri777'}
+        </h1>
         <p className="text-xs text-gray-500 mt-2 font-medium leading-relaxed">
-          Enter your mobile number to access your playable wallet, live markets, and instant withdrawals.
+          {showMpin
+            ? `Welcome back! Enter your 4-digit secret MPIN for +91 ${phone}`
+            : 'Enter your mobile number to access your playable wallet, live markets, and instant withdrawals.'}
         </p>
 
         {/* Free ₹100 Welcome Bonus Pill */}
-        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 border border-red-100 text-[#e22e28] text-xs font-bold mt-4">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>New Players get ₹100 Free Welcome Bonus</span>
-        </div>
+        {!showMpin && (
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 border border-red-100 text-[#e22e28] text-xs font-bold mt-4">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>New Players get ₹100 Free Welcome Bonus</span>
+          </div>
+        )}
 
         {/* Form Card */}
         <div className="bg-white rounded-3xl p-6 border border-gray-200 mt-6 shadow-sm w-full text-left space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="text-xs font-black text-gray-700 uppercase tracking-wider block mb-2">
-                Mobile Number
-              </label>
-              <div className="flex items-center border border-gray-200 rounded-2xl px-3.5 py-3 focus-within:border-[#e22e28] focus-within:ring-2 focus-within:ring-red-500/10 transition-all bg-gray-50/50">
-                <span className="font-bold text-gray-500 text-sm mr-2 shrink-0">+91</span>
-                <input
-                  type="tel"
-                  inputMode="numeric"
-                  maxLength={10}
-                  placeholder="Enter 10-digit number"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                  className="w-full bg-transparent font-bold text-base text-gray-900 outline-none tracking-wide"
-                  autoFocus
-                />
+            {!showMpin ? (
+              <div>
+                <label className="text-xs font-black text-gray-700 uppercase tracking-wider block mb-2">
+                  Mobile Number
+                </label>
+                <div className="flex items-center border border-gray-200 rounded-2xl px-3.5 py-3 focus-within:border-[#e22e28] focus-within:ring-2 focus-within:ring-red-500/10 transition-all bg-gray-50/50">
+                  <span className="font-bold text-gray-500 text-sm mr-2 shrink-0">+91</span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                    placeholder="Enter 10-digit number"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                    className="w-full bg-transparent font-bold text-base text-gray-900 outline-none tracking-wide"
+                    autoFocus
+                  />
+                </div>
               </div>
-            </div>
+            ) : (
+              <div>
+                <label className="text-xs font-black text-gray-700 uppercase tracking-wider block mb-2">
+                  4-Digit Secret MPIN
+                </label>
+                <div className="flex items-center border border-gray-200 rounded-2xl px-3.5 py-3 focus-within:border-[#e22e28] focus-within:ring-2 focus-within:ring-red-500/10 transition-all bg-gray-50/50">
+                  <Lock className="w-5 h-5 text-gray-400 mr-2 shrink-0" />
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={4}
+                    placeholder="••••"
+                    value={mpin}
+                    onChange={(e) => setMpin(e.target.value.replace(/\D/g, ''))}
+                    className="w-full bg-transparent font-black text-2xl text-center text-gray-900 outline-none tracking-[0.4em]"
+                    autoFocus
+                  />
+                </div>
+              </div>
+            )}
 
             <button
               type="submit"
-              disabled={loading || phone.length !== 10}
+              disabled={loading || (!showMpin ? phone.length !== 10 : mpin.length !== 4)}
               className="w-full bg-[#e22e28] hover:bg-[#c92424] disabled:bg-gray-300 text-white py-3.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-md shadow-red-500/20 active:scale-95 transition-all cursor-pointer"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               ) : (
                 <>
-                  <span>Continue</span>
+                  <span>{showMpin ? 'Unlock & Login' : 'Continue'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
+
+            {showMpin && (
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const msg = encodeURIComponent(`Hello Mantri777 Support, I forgot my 4-digit MPIN for my registered mobile number +91 ${phone}. Please help me reset it.`);
+                    window.open(`https://wa.me/919380347013?text=${msg}`, '_blank');
+                  }}
+                  className="text-xs font-black text-[#e22e28] hover:underline"
+                >
+                  Forgot MPIN?
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMpin(false);
+                    setMpin('');
+                  }}
+                  className="text-xs font-bold text-gray-500 hover:text-gray-900"
+                >
+                  Change Number
+                </button>
+              </div>
+            )}
           </form>
 
           <div className="pt-2 border-t border-gray-100 flex items-center justify-center gap-1.5 text-[11px] text-gray-400 font-bold">

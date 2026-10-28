@@ -3,6 +3,15 @@
 import { cookies } from 'next/headers';
 import { db, appSettings, systemSettings, deposits } from '@zenvora/shared/db';
 import { eq, gte, and } from 'drizzle-orm';
+import { getServerSession } from '../../lib/session';
+
+async function checkAdminAuth() {
+  const authCookie = cookies().get('admin_auth');
+  if (authCookie?.value === 'authenticated') return true;
+  const user = await getServerSession();
+  if (user?.role === 'ADMIN') return true;
+  throw new Error('Unauthorized');
+}
 
 export interface UpiAccount {
   id: string;
@@ -35,8 +44,7 @@ function parsePool(rawJson: string | null | undefined): UpiAccount[] {
 }
 
 export async function getGlobalSettings() {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  await checkAdminAuth();
 
   const settings = await db.select().from(appSettings).where(eq(appSettings.id, 'global')).limit(1);
   
@@ -64,8 +72,7 @@ export async function getGlobalSettings() {
 }
 
 export async function updateGlobalSettings(data: any) {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  await checkAdminAuth();
 
   try {
     const existing = await db.select().from(appSettings).where(eq(appSettings.id, 'global')).limit(1);
@@ -93,8 +100,7 @@ export async function updateGlobalSettings(data: any) {
 }
 
 export async function updateAdminPassword(newPassword: string) {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  await checkAdminAuth();
 
   try {
     const existing = await db.select().from(appSettings).where(eq(appSettings.id, 'global')).limit(1);
@@ -118,8 +124,7 @@ export async function updateAdminPassword(newPassword: string) {
  */
 export async function getUpiPoolAction() {
   try {
-    const authCookie = cookies().get('admin_auth');
-    if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+    await checkAdminAuth();
 
     const appSet = (await db.select().from(appSettings).where(eq(appSettings.id, 'global')).limit(1))[0];
     const rawPool = parsePool(appSet?.upiQrCodeUrl);
@@ -185,8 +190,7 @@ export async function getUpiPoolAction() {
 }
 
 export async function saveUpiPoolAction(pool: UpiAccount[]) {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  await checkAdminAuth();
 
   try {
     const jsonString = JSON.stringify(pool);
@@ -230,8 +234,7 @@ export async function addUpiAccountAction(account: {
   bankName?: string;
   dailyTxnLimit?: number;
 }): Promise<AddUpiResult> {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  await checkAdminAuth();
 
   const cleanUpi = (account.upiId || '').trim().toLowerCase();
   if (!cleanUpi || !cleanUpi.includes('@')) {
@@ -278,8 +281,7 @@ export async function addUpiAccountAction(account: {
  * Dedicated Action: Toggle Active Status
  */
 export async function toggleUpiAccountAction(id: string) {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  await checkAdminAuth();
 
   try {
     const appSet = (await db.select().from(appSettings).where(eq(appSettings.id, 'global')).limit(1))[0];
@@ -303,8 +305,7 @@ export async function toggleUpiAccountAction(id: string) {
  * Dedicated Action: Delete UPI Account
  */
 export async function deleteUpiAccountAction(id: string) {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  await checkAdminAuth();
 
   try {
     const appSet = (await db.select().from(appSettings).where(eq(appSettings.id, 'global')).limit(1))[0];
@@ -322,8 +323,7 @@ export async function deleteUpiAccountAction(id: string) {
  * Dedicated Action: Update Daily Limit
  */
 export async function updateUpiLimitAction(id: string, newLimit: number) {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  await checkAdminAuth();
 
   try {
     const appSet = (await db.select().from(appSettings).where(eq(appSettings.id, 'global')).limit(1))[0];

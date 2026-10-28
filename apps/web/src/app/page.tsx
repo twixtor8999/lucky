@@ -7,6 +7,7 @@ import HeroBadges from '@/components/HeroBadges';
 import LiveGamesSection from '@/components/LiveGamesSection';
 import AppAdaptiveRoot from '@/components/mobile/AppAdaptiveRoot';
 import HomeDownloadHeroButton from '@/components/HomeDownloadHeroButton';
+import HeaderDownloadButton from '@/components/HeaderDownloadButton';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -123,47 +124,10 @@ export default async function HomePage() {
                 ))}
               </div>
             </div>
-
-            <div className="relative group h-full flex items-center">
-              <div className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors">
-                <span>Starline Charts</span> <ChevronDown className="w-3.5 h-3.5 opacity-70 group-hover:rotate-180 transition-transform duration-200" />
-              </div>
-              <div className="absolute top-[64px] -left-4 bg-[#111] border border-gray-800 rounded-b-xl shadow-2xl w-56 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 flex flex-col max-h-[70vh] overflow-y-auto no-scrollbar">
-                <Link href="/chart/starline/all" className="px-4 py-2.5 hover:bg-gray-800 text-[#ff4b4b] font-bold hover:text-[#ff6b6b] text-xs uppercase whitespace-nowrap transition-colors border-b border-gray-800 mb-1">
-                  All Starline Pana Charts
-                </Link>
-                {["10:30 AM", "11:30 AM", "12:30 PM", "01:30 PM", "02:30 PM", "03:30 PM", "04:30 PM", "05:30 PM", "06:30 PM", "07:30 PM"].map((item, idx) => (
-                  <Link key={idx} href={`/chart/starline/${item.replace(/[: ]/g, '').toLowerCase()}`} className="px-4 py-2.5 hover:bg-gray-800 text-gray-400 hover:text-white text-xs uppercase whitespace-nowrap transition-colors">
-                    {item}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div className="relative group h-full flex items-center">
-              <div className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors">
-                <span>Jackpot Charts</span> <ChevronDown className="w-3.5 h-3.5 opacity-70 group-hover:rotate-180 transition-transform duration-200" />
-              </div>
-              <div className="absolute top-[64px] -left-4 bg-[#111] border border-gray-800 rounded-b-xl shadow-2xl w-56 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 flex flex-col max-h-[70vh] overflow-y-auto no-scrollbar">
-                <Link href="/chart/jackpot/all" className="px-4 py-2.5 hover:bg-gray-800 text-[#ff4b4b] font-bold hover:text-[#ff6b6b] text-xs uppercase whitespace-nowrap transition-colors border-b border-gray-800 mb-1">
-                  All Jackpot Jodi Charts
-                </Link>
-                {["10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"].map((item, idx) => (
-                  <Link key={idx} href={`/chart/jackpot/${item.replace(/[: ]/g, '').toLowerCase()}`} className="px-4 py-2.5 hover:bg-gray-800 text-gray-400 hover:text-white text-xs uppercase whitespace-nowrap transition-colors">
-                    {item}
-                  </Link>
-                ))}
-              </div>
-            </div>
           </nav>
 
           {/* Download Button */}
-          <Link
-            href="/download"
-            className="px-6 py-2 rounded-full text-sm font-medium text-white bg-[#ff4b4b] hover:bg-red-500 transition-colors shadow-[0_0_15px_rgba(255,75,75,0.4)]"
-          >
-            Download Now
-          </Link>
+          <HeaderDownloadButton />
         </div>
       </header>
 
@@ -414,44 +378,44 @@ export default async function HomePage() {
 
       {/* 12. Giant Black Footer */}
       <footer className="w-full bg-[#0a0a0a] text-white mt-8 pt-12 pb-8">
-        <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8 text-[13px] text-gray-400">
+        <div className="max-w-6xl mx-auto px-4 mb-10 space-y-8">
 
-          <div className="flex flex-col gap-3">
-            <span className="text-[#e42e2a] font-bold text-[15px] mb-2">Jodi Charts</span>
-            {marketList.map((item, idx) => (
-              <Link key={idx} href={`/chart/jodi/${item.toLowerCase().replace(/ /g, '-')}`} className="hover:text-white transition-colors uppercase">
-                {item}
-              </Link>
-            ))}
+          {/* Jodi Charts Horizontal Wrap */}
+          <div>
+            <div className="flex items-center gap-3 mb-3.5">
+              <span className="text-[#e42e2a] font-black text-sm uppercase tracking-wider whitespace-nowrap">Jodi Charts</span>
+              <div className="h-px bg-gray-800 flex-1" />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {marketList.map((item, idx) => (
+                <Link
+                  key={idx}
+                  href={`/chart/jodi/${item.toLowerCase().replace(/ /g, '-')}`}
+                  className="px-3.5 py-1.5 rounded-lg bg-[#14151a] border border-gray-800 hover:border-[#e42e2a] hover:bg-red-500/10 text-gray-300 hover:text-white text-xs font-semibold uppercase transition-all shadow-2xs"
+                >
+                  {item}
+                </Link>
+              ))}
+            </div>
           </div>
 
-          <div className="flex flex-col gap-3">
-            <span className="text-[#e42e2a] font-bold text-[15px] mb-2">Pana Charts</span>
-            {marketList.map((item, idx) => (
-              <Link key={idx} href={`/chart/pana/${item.toLowerCase().replace(/ /g, '-')}`} className="hover:text-white transition-colors uppercase">
-                {item}
-              </Link>
-            ))}
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <span className="text-[#e42e2a] font-bold text-[15px] mb-2">Starline Charts</span>
-            <Link href="/chart/starline/all" className="hover:text-white transition-colors">All Starline Pana Charts</Link>
-            {["10:30 AM", "11:30 AM", "12:30 PM", "01:30 PM", "02:30 PM", "03:30 PM", "04:30 PM", "05:30 PM", "06:30 PM", "07:30 PM"].map((item, idx) => (
-              <Link key={idx} href={`/chart/starline/${item.replace(/[: ]/g, '').toLowerCase()}`} className="hover:text-white transition-colors uppercase">
-                {item}
-              </Link>
-            ))}
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <span className="text-[#e42e2a] font-bold text-[15px] mb-2">Jackpot Charts</span>
-            <Link href="/chart/jackpot/all" className="hover:text-white transition-colors">All Jackpot Jodi Charts</Link>
-            {["10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"].map((item, idx) => (
-              <Link key={idx} href={`/chart/jackpot/${item.replace(/[: ]/g, '').toLowerCase()}`} className="hover:text-white transition-colors uppercase">
-                {item}
-              </Link>
-            ))}
+          {/* Pana Charts Horizontal Wrap */}
+          <div>
+            <div className="flex items-center gap-3 mb-3.5">
+              <span className="text-[#e42e2a] font-black text-sm uppercase tracking-wider whitespace-nowrap">Pana Charts</span>
+              <div className="h-px bg-gray-800 flex-1" />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {marketList.map((item, idx) => (
+                <Link
+                  key={idx}
+                  href={`/chart/pana/${item.toLowerCase().replace(/ /g, '-')}`}
+                  className="px-3.5 py-1.5 rounded-lg bg-[#14151a] border border-gray-800 hover:border-[#e42e2a] hover:bg-red-500/10 text-gray-300 hover:text-white text-xs font-semibold uppercase transition-all shadow-2xs"
+                >
+                  {item}
+                </Link>
+              ))}
+            </div>
           </div>
 
         </div>

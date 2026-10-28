@@ -3,6 +3,15 @@
 import { cookies } from 'next/headers';
 import { db, bets, users, markets, results, wallets, transactions, ledgerEntries } from '@zenvora/shared/db';
 import { eq, desc, and, isNull } from 'drizzle-orm';
+import { getServerSession } from '../../lib/session';
+
+async function checkAdminAuth() {
+  const authCookie = cookies().get('admin_auth');
+  if (authCookie?.value === 'authenticated') return true;
+  const user = await getServerSession();
+  if (user?.role === 'ADMIN') return true;
+  throw new Error('Unauthorized');
+}
 
 // Standard market multipliers (Balanced 15% Platform Margin)
 const MULTIPLIERS: Record<string, number> = {
@@ -16,8 +25,7 @@ const MULTIPLIERS: Record<string, number> = {
 };
 
 export async function getWinningBetsPendingPayout() {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  await checkAdminAuth();
 
   // 1. Fetch all ACTIVE bets joined with users and markets
   const activeBets = await db.select({
@@ -90,8 +98,7 @@ export async function getWinningBetsPendingPayout() {
 }
 
 export async function processPayout(betId: string, winAmount: number, userId: string) {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  await checkAdminAuth();
 
   try {
     await db.transaction(async (tx: any) => {
@@ -139,8 +146,7 @@ export async function processPayout(betId: string, winAmount: number, userId: st
 }
 
 export async function markBetAsLost(betId: string) {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  await checkAdminAuth();
 
   try {
     await db.update(bets)

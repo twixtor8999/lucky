@@ -3,10 +3,18 @@
 import { cookies } from 'next/headers';
 import { db, withdrawals, users, wallets, transactions, ledgerEntries } from '@zenvora/shared/db';
 import { eq, desc } from 'drizzle-orm';
+import { getServerSession } from '../../lib/session';
+
+async function checkAdminAuth() {
+  const authCookie = cookies().get('admin_auth');
+  if (authCookie?.value === 'authenticated') return true;
+  const user = await getServerSession();
+  if (user?.role === 'ADMIN') return true;
+  throw new Error('Unauthorized');
+}
 
 export async function getPendingWithdrawals() {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  await checkAdminAuth();
 
   const pendingWithdrawals = await db.select({
     id: withdrawals.id,
@@ -37,8 +45,7 @@ export async function approveWithdrawal(
   paymentReference: string,
   paymentNote?: string
 ) {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  await checkAdminAuth();
 
   try {
     await db.transaction(async (tx: any) => {
@@ -80,8 +87,7 @@ export async function approveWithdrawal(
 }
 
 export async function rejectWithdrawal(withdrawalId: string, reason: string) {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  await checkAdminAuth();
 
   try {
     await db.transaction(async (tx: any) => {

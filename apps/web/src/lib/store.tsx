@@ -264,10 +264,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return { success: false, message: result.message };
     }
 
-    const code = (result as any).code || null;
-    setActiveOtpCode(code);
     setLastPhoneAttempted(phone);
     audioHaptics.playTap();
+
+    if ((result as any).requiresMpin) {
+      setActiveOtpCode(null);
+      showToast('info', 'Welcome Back', 'Please enter your 4-digit secret MPIN to unlock.');
+      return {
+        success: true,
+        requiresMpin: true,
+        isNewUser: false,
+      };
+    }
+
+    const code = (result as any).code || null;
+    setActiveOtpCode(code);
 
     showToast(
       'success',
@@ -275,7 +286,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       `Your security code is ${code}`
     );
 
-    return { success: true, code };
+    return { success: true, code, requiresMpin: false, isNewUser: true };
   };
 
   // Auth: Verify OTP

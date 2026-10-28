@@ -64,7 +64,7 @@ export default function MobileAppView({
   const { user, wallet, isAuthenticated, logout, showToast, requestOtp, verifyOtp, setupMpin, loginWithMpin, activeOtpCode } = useApp();
 
   // App Navigation & Drawer State
-  const [activeTab, setActiveTab] = useState<'main' | 'starline' | 'jackpot'>('main');
+  const [activeTab, setActiveTab] = useState<'main' | 'starline'>('main');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [currentBottomTab, setCurrentBottomTab] = useState<'home' | 'history' | 'passbook' | 'funds' | 'support'>('home');
@@ -134,6 +134,11 @@ export default function MobileAppView({
     const res = await requestOtp(phoneInput);
     setAuthLoading(false);
     if (res.success) {
+      if ((res as any).requiresMpin) {
+        setLoginMpinInput('');
+        setAppScreen('mpin_login');
+        return;
+      }
       const code = (res as any).code || '';
       if (code) {
         setGeneratedScreenCode(code);
@@ -198,7 +203,8 @@ export default function MobileAppView({
 
     if (nextVal.length === 4) {
       setAuthLoading(true);
-      const res = await loginWithMpin(user?.phone || '', nextVal);
+      const phoneToUse = user?.phone || phoneInput;
+      const res = await loginWithMpin(phoneToUse, nextVal);
       setAuthLoading(false);
       if (res.success) {
         sessionStorage.setItem('mantri_mpin_unlocked', 'true');
@@ -442,12 +448,30 @@ export default function MobileAppView({
             })}
           </div>
 
-          <button
-            onClick={() => setAppScreen('phone')}
-            className="text-xs font-black text-[#e22e28] mt-6 hover:underline"
-          >
-            Forgot MPIN?
-          </button>
+          <div className="flex items-center gap-3 mt-6">
+            <button
+              type="button"
+              onClick={() => {
+                const targetPhone = user?.phone || phoneInput;
+                const msg = encodeURIComponent(`Hello Mantri777 Support, I forgot my 4-digit MPIN for my registered mobile number +91 ${targetPhone}. Please help me reset it.`);
+                window.open(`https://wa.me/919380347013?text=${msg}`, '_blank');
+              }}
+              className="text-xs font-black text-[#e22e28] hover:underline"
+            >
+              Forgot MPIN? Reset via WhatsApp
+            </button>
+            <span className="text-gray-300">•</span>
+            <button
+              type="button"
+              onClick={() => {
+                setLoginMpinInput('');
+                setAppScreen('phone');
+              }}
+              className="text-xs font-bold text-gray-500 hover:text-gray-900"
+            >
+              Change Number
+            </button>
+          </div>
         </div>
 
         {/* Numeric keypad */}
@@ -486,9 +510,7 @@ export default function MobileAppView({
   // --------------------------------------------------------------------------
   // SCREEN 4: MARKET & SLIDE DASHBOARD (Matching Screenshot 1 & 2)
   // --------------------------------------------------------------------------
-  const displayedGames = 
-    activeTab === 'main' ? mainGames :
-    activeTab === 'starline' ? starlineGames : jackpotGames;
+  const displayedGames = mainGames;
 
   return (
     <div className={`min-h-screen pb-20 ${darkMode ? 'bg-gray-950 text-white' : 'bg-[#fff5f5] text-gray-900'} select-none relative overflow-x-hidden`}>
@@ -514,6 +536,16 @@ export default function MobileAppView({
             </div>
             <span className="font-black text-xl italic tracking-tight text-[#e22e28]">MANTRI777</span>
           </div>
+
+          {(user?.role === 'ADMIN' || user?.phone === '8296832413') && (
+            <Link
+              href="/super-secret-admin/dashboard"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-red-600 text-white font-black text-[10px] tracking-wider shadow-sm active:scale-95 transition-transform"
+            >
+              <Shield className="w-3 h-3" />
+              <span>ADMIN</span>
+            </Link>
+          )}
         </div>
 
         {/* Right: Wallet Balance Pill + Bell Icon */}
@@ -581,29 +613,15 @@ export default function MobileAppView({
         </div>
       </div>
 
-      {/* 4. CATEGORY PILL TABS */}
-      <div className="px-4 pb-2">
-        <div className="flex gap-2">
-          {[
-            { key: 'main', label: 'Main Markets' },
-            { key: 'starline', label: 'Starline' },
-            { key: 'jackpot', label: 'Jackpot' },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => {
-                audioHaptics.playTap();
-                setActiveTab(tab.key as any);
-              }}
-              className={`flex-1 py-2.5 rounded-2xl text-xs font-black transition-all ${
-                activeTab === tab.key
-                  ? 'bg-[#e22e28] text-white shadow-md shadow-red-500/20'
-                  : 'bg-white text-gray-700 border border-gray-200'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+      {/* 4. SECTION HEADER */}
+      <div className="px-4 pb-1 pt-1 flex items-center justify-between">
+        <h3 className="font-black text-sm text-gray-900 tracking-tight">Live Markets</h3>
+        <div className="flex items-center gap-1.5">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+          </span>
+          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Live Sync</span>
         </div>
       </div>
 
@@ -694,9 +712,32 @@ export default function MobileAppView({
                 </div>
               </div>
 
+              {/* Super Admin Access Card for 8296832413 */}
+              {(user?.role === 'ADMIN' || user?.phone === '8296832413') && (
+                <div className="mx-3 my-2 p-3 rounded-2xl bg-gradient-to-br from-amber-500/10 via-red-500/10 to-amber-500/5 border border-amber-300 shadow-xs">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm">👑</span>
+                      <span className="text-[11px] font-black text-amber-800 uppercase tracking-wider">Super Admin</span>
+                    </div>
+                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-amber-500 text-white">Full Access</span>
+                  </div>
+                  <p className="text-[10px] text-gray-600 mb-2 leading-tight">Declare game results, manage user balances & payouts without passwords.</p>
+                  <Link
+                    href="/super-secret-admin/dashboard"
+                    onClick={() => setDrawerOpen(false)}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-gradient-to-r from-[#e22e28] to-amber-600 text-white font-black text-xs shadow-md shadow-red-500/20 active:scale-95 transition-all"
+                  >
+                    <Shield className="w-3.5 h-3.5" />
+                    <span>Open Super Admin</span>
+                  </Link>
+                </div>
+              )}
+
               {/* Menu List */}
               <div className="py-2 divide-y divide-gray-50 text-sm font-bold text-gray-700">
                 {[
+                  ...((user?.role === 'ADMIN' || user?.phone === '8296832413') ? [{ icon: Shield, label: '👑 Admin Dashboard', href: '/super-secret-admin/dashboard' }] : []),
                   { icon: User, label: 'My Profile', href: '/profile' },
                   { icon: Lock, label: 'Change MPIN', href: '/setup-mpin' },
                   { icon: BarChart2, label: 'Charts', href: '/chart/jodi/kalyan' },

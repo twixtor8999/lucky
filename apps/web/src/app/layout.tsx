@@ -58,10 +58,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
+      { url: "/favicon.ico" },
+      { url: "/favicon.png", type: "image/png" },
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/favicon.jpg", type: "image/jpeg" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: "/icons/icon-192.png",
+    apple: "/apple-touch-icon.png",
   },
   appleWebApp: {
     capable: true,
@@ -76,7 +78,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#e22e28",
+  themeColor: "#0a0b0e",
 };
 
 export default function RootLayout({
@@ -107,7 +109,8 @@ export default function RootLayout({
           }}
         />
         <link rel="manifest" href="/manifest.webmanifest" />
-        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body className="bg-gray-50 text-gray-900 min-h-screen flex flex-col font-sans">
         <ClientWrapper>

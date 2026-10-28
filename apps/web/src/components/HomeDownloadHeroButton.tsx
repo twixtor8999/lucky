@@ -6,14 +6,14 @@ import { usePwa } from '@/components/pwa/PwaManager';
 import { audioHaptics } from '@/lib/audio-haptics';
 
 export default function HomeDownloadHeroButton() {
-  const { installPwa, isInstalled } = usePwa();
+  const { openInstallModal, isInstalled } = usePwa();
 
   return (
     <div className="relative z-30 flex justify-center w-full px-4 -mt-8">
       <button
         onClick={() => {
           audioHaptics.playTap();
-          installPwa();
+          openInstallModal();
         }}
         className="w-full max-w-5xl group cursor-pointer block relative transition-all duration-300 hover:scale-[1.01]"
       >

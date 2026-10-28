@@ -33,9 +33,30 @@ export async function logoutAdmin() {
   redirect('/super-secret-admin');
 }
 
+async function verifyAdminAuth() {
+  let authCookieValue: string | undefined;
+  try {
+    authCookieValue = cookies().get('admin_auth')?.value;
+  } catch {
+    authCookieValue = (globalThis as any).__TEST_ADMIN_AUTH__;
+  }
+
+  if (authCookieValue === 'authenticated') {
+    const adminUser = await db.select({ id: users.id }).from(users).where(eq(users.role, 'ADMIN')).limit(1);
+    return { isAuthorized: true, adminId: adminUser[0]?.id || null };
+  }
+
+  const sessionUser = await getServerSession();
+  if (sessionUser && sessionUser.role === 'ADMIN') {
+    return { isAuthorized: true, adminId: sessionUser.id };
+  }
+
+  return { isAuthorized: false, adminId: null };
+}
+
 export async function getUsersWithWallets() {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  const auth = await verifyAdminAuth();
+  if (!auth.isAuthorized) throw new Error('Unauthorized');
 
   const allUsers = await db.select({
     id: users.id,
@@ -63,8 +84,8 @@ export async function confirmWelcomeBonusPayment(
   utr: string,
   note?: string
 ) {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  const auth = await verifyAdminAuth();
+  if (!auth.isAuthorized) throw new Error('Unauthorized');
 
   try {
     await db.transaction(async (tx: any) => {
@@ -127,26 +148,7 @@ export async function confirmWelcomeBonusPayment(
   }
 }
 
-async function verifyAdminAuth() {
-  let authCookieValue: string | undefined;
-  try {
-    authCookieValue = cookies().get('admin_auth')?.value;
-  } catch {
-    authCookieValue = (globalThis as any).__TEST_ADMIN_AUTH__;
-  }
 
-  if (authCookieValue === 'authenticated') {
-    const adminUser = await db.select({ id: users.id }).from(users).where(eq(users.role, 'ADMIN')).limit(1);
-    return { isAuthorized: true, adminId: adminUser[0]?.id || null };
-  }
-
-  const sessionUser = await getServerSession();
-  if (sessionUser && sessionUser.role === 'ADMIN') {
-    return { isAuthorized: true, adminId: sessionUser.id };
-  }
-
-  return { isAuthorized: false, adminId: null };
-}
 
 function maskBankNumber(acc?: string | null): string {
   if (!acc || acc.trim() === '') return 'Not Provided';
@@ -388,8 +390,8 @@ export async function rejectDeposit(depositId: string, reason: string) {
 }
 
 export async function getAllMarkets() {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  const auth = await verifyAdminAuth();
+  if (!auth.isAuthorized) throw new Error('Unauthorized');
 
   const allMarkets = await db.select().from(markets).orderBy(markets.createdAt);
   const allResults = await db.select().from(results).orderBy(desc(results.resultDate), desc(results.createdAt));
@@ -414,8 +416,8 @@ export async function getAllMarkets() {
 
 
 export async function publishOpenResult(marketId: string, resultDate: string, openPatti: string) {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  const auth = await verifyAdminAuth();
+  if (!auth.isAuthorized) throw new Error('Unauthorized');
 
   try {
     // Automatically calculate Open Ank from Open Patti
@@ -455,8 +457,8 @@ export async function publishOpenResult(marketId: string, resultDate: string, op
 }
 
 export async function publishCloseResult(marketId: string, resultDate: string, closePatti: string) {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  const auth = await verifyAdminAuth();
+  if (!auth.isAuthorized) throw new Error('Unauthorized');
 
   try {
     const existingResult = await db.select().from(results)
@@ -499,8 +501,8 @@ export async function publishSingleResult(
   patti: string,
   marketType: 'starline' | 'jackpot'
 ) {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  const auth = await verifyAdminAuth();
+  if (!auth.isAuthorized) throw new Error('Unauthorized');
 
   try {
     let resultValue: string;
@@ -558,8 +560,8 @@ function getMarketCategoryHelper(name: string): 'main' | 'starline' | 'jackpot' 
 }
 
 export async function getAdminBidsData() {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  const auth = await verifyAdminAuth();
+  if (!auth.isAuthorized) throw new Error('Unauthorized');
 
   const allMarkets = await db.select().from(markets);
   const marketsWithCategory = allMarkets.map(m => ({
@@ -614,8 +616,8 @@ export async function getAdminBidsData() {
 }
 
 export async function seedDemoBidsAction() {
-  const authCookie = cookies().get('admin_auth');
-  if (!authCookie || authCookie.value !== 'authenticated') throw new Error('Unauthorized');
+  const auth = await verifyAdminAuth();
+  if (!auth.isAuthorized) throw new Error('Unauthorized');
 
   const allUsers = await db.select().from(users).limit(5);
   const allMarkets = await db.select().from(markets);

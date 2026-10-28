@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Share, PlusSquare, X, CheckCircle2 } from 'lucide-react';
+import { Share, PlusSquare, X, CheckCircle2, Download } from 'lucide-react';
 
 interface PwaContextType {
   isInstallable: boolean;
@@ -11,6 +11,9 @@ interface PwaContextType {
   downloadApk: () => void;
   showIosGuide: boolean;
   setShowIosGuide: (show: boolean) => void;
+  showInstallModal: boolean;
+  openInstallModal: () => void;
+  closeInstallModal: () => void;
 }
 
 const PwaContext = createContext<PwaContextType>({
@@ -21,6 +24,9 @@ const PwaContext = createContext<PwaContextType>({
   downloadApk: () => {},
   showIosGuide: false,
   setShowIosGuide: () => {},
+  showInstallModal: false,
+  openInstallModal: () => {},
+  closeInstallModal: () => {},
 });
 
 export const usePwa = () => useContext(PwaContext);
@@ -32,6 +38,7 @@ export default function PwaManager({ children }: { children?: React.ReactNode })
   const [isIos, setIsIos] = useState(false);
   const [showIosGuide, setShowIosGuide] = useState(false);
   const [showGenericGuide, setShowGenericGuide] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
 
   const downloadApk = () => {
     try {
@@ -173,6 +180,33 @@ export default function PwaManager({ children }: { children?: React.ReactNode })
     setShowGenericGuide(true);
   };
 
+  // Check URL query param for instant trigger (e.g. redirected from /download)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('install') === 'true') {
+        setShowInstallModal(true);
+      }
+    }
+  }, []);
+
+  const openInstallModal = () => {
+    if (isInstalled) {
+      alert('Mantri777 is already installed and running on your device!');
+      return;
+    }
+    setShowInstallModal(true);
+  };
+
+  const closeInstallModal = () => {
+    setShowInstallModal(false);
+  };
+
+  const handleConfirmInstall = async () => {
+    setShowInstallModal(false);
+    await installPwa();
+  };
+
   const openInChrome = () => {
     if (typeof window !== 'undefined') {
       const cleanUrl = window.location.host + window.location.pathname + window.location.search;
@@ -191,9 +225,80 @@ export default function PwaManager({ children }: { children?: React.ReactNode })
         downloadApk,
         showIosGuide,
         setShowIosGuide,
+        showInstallModal,
+        openInstallModal,
+        closeInstallModal,
       }}
     >
       {children}
+
+      {/* Install Confirmation Modal */}
+      {showInstallModal && (
+        <div className="fixed inset-0 z-[250] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-6 text-gray-900 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 relative border border-gray-100">
+            {/* Top Close Button */}
+            <button
+              onClick={closeInstallModal}
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 rounded-full active:scale-95 transition-all"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* App Icon & Badge */}
+            <div className="flex flex-col items-center text-center pt-2">
+              <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-xl ring-4 ring-amber-100 mb-3 bg-black flex items-center justify-center">
+                <img
+                  src="/icons/icon-192.png"
+                  alt="Mantri777"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <h3 className="text-xl font-black text-gray-900 tracking-tight">
+                Want to install Mantri777 app?
+              </h3>
+              <p className="text-xs text-gray-500 font-medium mt-1.5 px-2">
+                Install Mantri777 on your phone for instant 1-tap access, live Satta Matka results, and fast settlements.
+              </p>
+            </div>
+
+            {/* Feature Highlights */}
+            <div className="bg-amber-50/60 rounded-2xl p-3 border border-amber-100/80 space-y-1.5 text-[11px] font-bold text-amber-900">
+              <div className="flex items-center gap-2">
+                <span className="text-base">⚡</span>
+                <span>Fastest 1-Tap Home Screen Launch</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-base">🔔</span>
+                <span>Instant Kalyan & Milan Market Alerts</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-base">🛡️</span>
+                <span>Lightweight (0 MB storage, Zero Battery Drain)</span>
+              </div>
+            </div>
+
+            {/* Two Action Buttons: Cancel & Install */}
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={closeInstallModal}
+                className="flex-1 py-3 px-4 rounded-2xl border-2 border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-100 active:scale-95 transition-all text-center"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmInstall}
+                className="flex-1 py-3 px-4 rounded-2xl bg-[#e22e28] hover:bg-red-700 text-white font-black text-sm shadow-lg shadow-red-500/30 active:scale-95 transition-all flex items-center justify-center gap-1.5 text-center"
+              >
+                <Download className="w-4 h-4 stroke-[2.5]" />
+                <span>Install</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* iOS Install Guide Modal */}
       {showIosGuide && (

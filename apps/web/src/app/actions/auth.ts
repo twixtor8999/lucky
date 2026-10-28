@@ -1,5 +1,6 @@
 'use server';
 
+import { cookies } from 'next/headers';
 import { db, users, wallets, mpins, otpVerifications } from '@zenvora/shared/db';
 import { eq, and, gt } from 'drizzle-orm';
 import { UserRole, UserStatus } from '@zenvora/shared';
@@ -26,7 +27,30 @@ export async function requestOtpAction(phoneInput: string) {
   }
   const phone = parseResult.data;
 
-  // Generate unique 4-digit On-Screen Security Code
+  // 1. Check if user already exists
+  const existingUserArray = await db.select().from(users).where(eq(users.phone, phone)).limit(1);
+  const existingUser = existingUserArray[0];
+
+  if (existingUser) {
+    // Check if user has an MPIN set
+    const existingMpinArray = await db.select().from(mpins).where(eq(mpins.userId, existingUser.id)).limit(1);
+    const mpinRecord = existingMpinArray[0];
+
+    if (mpinRecord) {
+      // RETURNING USER: DO NOT GENERATE ON-SCREEN CODE!
+      // Require their private secret MPIN
+      await writeAuditLog('OTP_REQUESTED', 'User', { success: true, metadata: { phone, isReturning: true, method: 'MPIN' } });
+      return {
+        success: true,
+        isNewUser: false,
+        requiresMpin: true,
+        message: 'Welcome back! Please enter your 4-digit secret MPIN.',
+      };
+    }
+  }
+
+  // 2. BRAND NEW USER (or user completing first-time setup):
+  // Generate unique 4-digit On-Screen Security Code for initial human verification
   const generatedCode = Math.floor(1000 + Math.random() * 9000).toString();
   
   // Hash code for database verification
@@ -39,10 +63,12 @@ export async function requestOtpAction(phoneInput: string) {
     expiresAt,
   });
 
-  await writeAuditLog('OTP_REQUESTED', 'User', { success: true, metadata: { phone, method: 'ON_SCREEN_SECURITY_CODE' } });
+  await writeAuditLog('OTP_REQUESTED', 'User', { success: true, metadata: { phone, method: 'ON_SCREEN_SECURITY_CODE', isNewUser: true } });
 
   return {
     success: true,
+    isNewUser: true,
+    requiresMpin: false,
     code: generatedCode,
     message: 'Security verification code generated.',
   };
@@ -128,7 +154,12 @@ export async function verifyOtpAction(phoneInput: string, otpInput: string) {
       // Check if MPIN exists
       const existingMpinArray = await db.select().from(mpins).where(eq(mpins.userId, userId)).limit(1);
       if (existingMpinArray[0]) {
-        requiresMpin = false;
+        // Account has an MPIN set; cannot bypass with verification code
+        return {
+          success: false,
+          requiresMpin: true,
+          message: 'Account is secured with an MPIN. Please unlock using your MPIN.',
+        };
       }
     } else {
       // Create new user
@@ -279,6 +310,16 @@ export async function loginWithMpinAction(phoneInput: string, mpinInput: string)
     // Create session
     await createSession(existingUser.id);
 
+    // If user has ADMIN role, automatically grant super admin cookie
+    if (existingUser.role === 'ADMIN') {
+      cookies().set('admin_auth', 'authenticated', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24 * 30, // 30 days
+        path: '/',
+      });
+    }
+
     await writeAuditLog('USER_LOGIN', 'User', { actorId: existingUser.id, entityId: existingUser.id });
 
     const userProfile = {
@@ -305,6 +346,7 @@ export async function logoutAction() {
   if (user) {
     await writeAuditLog('USER_LOGOUT', 'User', { actorId: user.id, entityId: user.id });
   }
+  cookies().delete('admin_auth');
   await destroySession();
   return { success: true };
 }

@@ -9,7 +9,7 @@ import { usePwa } from '@/components/pwa/PwaManager';
 export default function StickyDownloadBar() {
   const [visible, setVisible] = useState(false);
   const [dismissed, setDismissed] = useState(false);
-  const { installPwa, isInstalled } = usePwa();
+  const { openInstallModal, isInstalled } = usePwa();
 
   useEffect(() => {
     let lastScrollY = window.scrollY;
@@ -43,7 +43,7 @@ export default function StickyDownloadBar() {
     >
       <div className="w-full max-w-5xl mx-auto flex justify-center pointer-events-auto">
         <button
-          onClick={() => installPwa()}
+          onClick={() => openInstallModal()}
           className="w-full group cursor-pointer block relative transition-all duration-300 hover:scale-[1.02]"
         >
           <div

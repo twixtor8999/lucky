@@ -12,7 +12,7 @@ function OtpContent() {
   const phone = searchParams.get('phone') || '9876543210';
   const { verifyOtp, requestOtp, activeOtpCode } = useApp();
 
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [otp, setOtp] = useState(['', '', '', '']);
   const [countdown, setCountdown] = useState(30);
   const [loading, setLoading] = useState(false);
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
@@ -32,12 +32,12 @@ function OtpContent() {
     setOtp(newOtp);
     audioHaptics.playTap();
 
-    if (digit && index < 5) {
+    if (digit && index < 3) {
       inputsRef.current[index + 1]?.focus();
     }
 
-    // Auto submit if all 6 digits entered
-    if (digit && index === 5 && newOtp.every((d) => d !== '')) {
+    // Auto submit if all 4 digits entered
+    if (digit && index === 3 && newOtp.every((d) => d !== '')) {
       handleVerify(newOtp.join(''));
     }
   };
@@ -50,7 +50,7 @@ function OtpContent() {
 
   const handleVerify = async (enteredOtp?: string) => {
     const fullOtp = enteredOtp || otp.join('');
-    if (fullOtp.length !== 6) return;
+    if (fullOtp.length !== 4) return;
 
     setLoading(true);
     const res = await verifyOtp(phone, fullOtp);
@@ -72,7 +72,7 @@ function OtpContent() {
   };
 
   const autoFillTestOtp = () => {
-    const code = activeOtpCode || '774422';
+    const code = activeOtpCode || '1234';
     const split = code.split('');
     setOtp(split);
     audioHaptics.playTap();
@@ -85,9 +85,9 @@ function OtpContent() {
         <div className="w-14 h-14 rounded-2xl bg-white border border-gray-200 flex items-center justify-center shadow-sm mb-4">
           <Lock className="w-6 h-6 text-[#e42e2a]" />
         </div>
-        <h1 className="text-2xl font-black text-gray-900 tracking-tight">Verify OTP</h1>
+        <h1 className="text-2xl font-black text-gray-900 tracking-tight">Security Verification</h1>
         <p className="text-sm text-gray-500 mt-2 font-medium">
-          Enter the 6-digit code sent to <br />
+          Enter the 4-digit security code for <br />
           <span className="text-[#e42e2a] font-bold text-base">+91 {phone}</span>
         </p>
       </div>
