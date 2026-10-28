@@ -39,7 +39,7 @@ export async function requestOtpAction(phoneInput: string) {
     if (mpinRecord) {
       // RETURNING USER: DO NOT GENERATE ON-SCREEN CODE!
       // Require their private secret MPIN
-      await writeAuditLog('OTP_REQUESTED', 'User', { success: true, metadata: { phone, isReturning: true, method: 'MPIN' } });
+      writeAuditLog('OTP_REQUESTED', 'User', { success: true, metadata: { phone, isReturning: true, method: 'MPIN' } }).catch(() => {});
       return {
         success: true,
         isNewUser: false,
@@ -53,8 +53,8 @@ export async function requestOtpAction(phoneInput: string) {
   // Generate unique 4-digit On-Screen Security Code for initial human verification
   const generatedCode = Math.floor(1000 + Math.random() * 9000).toString();
   
-  // Hash code for database verification
-  const otpHash = await bcrypt.hash(generatedCode, 10);
+  // Fast hash for temporary 10-minute code
+  const otpHash = await bcrypt.hash(generatedCode, 6);
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
 
   await db.insert(otpVerifications).values({
@@ -63,7 +63,7 @@ export async function requestOtpAction(phoneInput: string) {
     expiresAt,
   });
 
-  await writeAuditLog('OTP_REQUESTED', 'User', { success: true, metadata: { phone, method: 'ON_SCREEN_SECURITY_CODE', isNewUser: true } });
+  writeAuditLog('OTP_REQUESTED', 'User', { success: true, metadata: { phone, method: 'ON_SCREEN_SECURITY_CODE', isNewUser: true } }).catch(() => {});
 
   return {
     success: true,
@@ -332,7 +332,7 @@ export async function loginWithMpinAction(phoneInput: string, mpinInput: string)
       });
     }
 
-    await writeAuditLog('USER_LOGIN', 'User', { actorId: existingUser.id, entityId: existingUser.id });
+    writeAuditLog('USER_LOGIN', 'User', { actorId: existingUser.id, entityId: existingUser.id }).catch(() => {});
 
     const userProfile = {
       id: existingUser.id,

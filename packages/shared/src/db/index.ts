@@ -34,13 +34,21 @@ if (process.env.NODE_ENV !== 'production' && typeof dns !== 'undefined' && (dns 
   };
 }
 
-const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:password@127.0.0.1:5454/zenvora?sslmode=disable';
+const DEFAULT_NEON_URL = 'postgresql://neondb_owner:npg_pvXWTqZz9Il6@ep-winter-band-azaacg41-pooler.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
 
-// Connection pool for queries
+const connectionString = (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('postgresql://') && !process.env.DATABASE_URL.includes('127.0.0.1'))
+  ? process.env.DATABASE_URL
+  : DEFAULT_NEON_URL;
+
+// Connection pool for queries - optimized for serverless and Neon pooler
 export const client = postgres(connectionString, { 
-  max: 10,
+  max: 5,
+  idle_timeout: 15,
+  connect_timeout: 5,
+  prepare: false,
   ssl: connectionString.includes('neon.tech') ? { rejectUnauthorized: false } : undefined,
 });
+
 export const db = drizzle(client, { schema });
 
 export * from './schema';
