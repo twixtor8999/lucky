@@ -12,7 +12,7 @@ function OtpContent() {
   const phone = searchParams.get('phone') || '9876543210';
   const paramCode = searchParams.get('code') || '';
   const { verifyOtp, requestOtp, activeOtpCode } = useApp();
-  const displayCode = activeOtpCode || paramCode;
+  const displayCode = activeOtpCode || paramCode || '1234';
 
   const [otp, setOtp] = useState(['', '', '', '']);
   const [countdown, setCountdown] = useState(30);

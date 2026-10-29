@@ -23,6 +23,13 @@ export default function LoginPage() {
       return;
     }
 
+    // Instant Super Admin detection
+    if (cleanPhone === '8296832413' && !showMpin) {
+      setShowMpin(true);
+      showToast('info', 'Super Admin Detected', 'Please enter your 4-digit secret MPIN.');
+      return;
+    }
+
     if (showMpin) {
       if (mpin.length !== 4) {
         showToast('error', 'Invalid MPIN', 'MPIN must be 4 digits');
@@ -48,7 +55,7 @@ export default function LoginPage() {
 
     if (res.success) {
       audioHaptics.playTap();
-      if ((res as any).requiresMpin) {
+      if ((res as any).requiresMpin || cleanPhone === '8296832413') {
         setShowMpin(true);
       } else {
         const code = (res as any).code || '';
@@ -100,7 +107,14 @@ export default function LoginPage() {
                     maxLength={10}
                     placeholder="Enter 10-digit number"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setPhone(val);
+                      if (val === '8296832413') {
+                        setShowMpin(true);
+                        showToast('info', 'Super Admin Detected', 'Enter your secret MPIN to unlock.');
+                      }
+                    }}
                     className="w-full bg-transparent font-bold text-base text-gray-900 outline-none tracking-wide"
                     autoFocus
                   />
