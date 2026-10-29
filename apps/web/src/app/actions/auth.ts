@@ -412,3 +412,34 @@ export async function savePaymentDetailsAction(data: {
     return { success: false, message: 'Failed to save payment details' };
   }
 }
+
+export async function updateUserNameAction(firstName: string, lastName: string) {
+  const user = await getServerSession();
+  if (!user) return { success: false, message: 'Unauthorized' };
+
+  const cleanFirst = (firstName || '').trim();
+  const cleanLast = (lastName || '').trim();
+
+  if (!cleanFirst) {
+    return { success: false, message: 'Please enter your first name' };
+  }
+
+  const fullName = `${cleanFirst} ${cleanLast}`.trim();
+
+  try {
+    await db.update(users)
+      .set({
+        firstName: cleanFirst,
+        lastName: cleanLast,
+        displayName: fullName,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, user.id));
+
+    return { success: true, displayName: fullName };
+  } catch (error) {
+    console.error('Error in updateUserNameAction:', error);
+    return { success: false, message: 'Failed to update name' };
+  }
+}
+

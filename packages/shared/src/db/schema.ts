@@ -39,6 +39,8 @@ export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
   phone: varchar('phone', { length: 20 }).notNull().unique(),
   displayName: varchar('display_name', { length: 100 }),
+  firstName: varchar('first_name', { length: 100 }),
+  lastName: varchar('last_name', { length: 100 }),
   status: userStatusEnum('status').default('ACTIVE').notNull(),
   role: roleEnum('role').default('USER').notNull(),
   phoneVerifiedAt: timestamp('phone_verified_at', { withTimezone: true }),

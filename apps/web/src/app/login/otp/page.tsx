@@ -66,11 +66,8 @@ function OtpContent() {
         router.push('/super-secret-admin/dashboard');
         return;
       }
-      if (res.requiresMpin || res.isNewUser) {
-        router.push('/setup-mpin');
-      } else {
-        router.push('/home');
-      }
+      // When user logs in through code, next screen is First Name, Last Name, then MPIN screen
+      router.push('/setup-profile');
     }
   };
 

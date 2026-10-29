@@ -2,228 +2,510 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Wallet, ArrowDownLeft, ArrowUpRight, Plus, History, ShieldCheck, Gift, Lock, Clock } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { 
+  Menu, 
+  Bell, 
+  Wallet, 
+  CreditCard, 
+  Building2, 
+  ArrowUpRight, 
+  RefreshCw, 
+  Banknote, 
+  History as HistoryIcon, 
+  BookOpen, 
+  Home as HomeIcon, 
+  Headphones, 
+  X, 
+  ChevronRight,
+  ShieldCheck,
+  CheckCircle2,
+  ExternalLink
+} from 'lucide-react';
 import { audioHaptics } from '@/lib/audio-haptics';
-import { getWalletAction, getTransactionHistoryAction } from '@/app/actions/wallet';
+import { getWalletAction, getUserPaymentDetailsAction } from '@/app/actions/wallet';
 import { getUserAction } from '@/app/actions/auth';
+import { useApp } from '@/lib/store';
 
-export default function WalletPage() {
-  const [sessionUser, setSessionUser] = useState<any>(null);
-  const [balances, setBalances] = useState<{
-    cashBalance: number;
-    bonusBalance: number;
-    lockedBalance: number;
-    totalBalance: number;
-  }>({ cashBalance: 0, bonusBalance: 0, lockedBalance: 0, totalBalance: 0 });
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function FundsPage() {
+  const router = useRouter();
+  const { wallet } = useApp();
+  const [balance, setBalance] = useState<number>(0);
+  const [paymentDetails, setPaymentDetails] = useState<any>(null);
+  const [showMenu, setShowMenu] = useState(false);
+  const [selectedHistoryModal, setSelectedHistoryModal] = useState<'BANK' | 'UPI' | null>(null);
 
   useEffect(() => {
-    const fetchWalletData = async () => {
-      try {
-        const userRes = await getUserAction();
-        if (userRes.success && userRes.user) {
-          setSessionUser(userRes.user);
-
-          const walletRes = await getWalletAction();
-          if (walletRes.success && walletRes.balances) {
-            setBalances(walletRes.balances);
-          }
-
-          const txnRes = await getTransactionHistoryAction();
-          if (txnRes.success && txnRes.transactions) {
-            setTransactions(txnRes.transactions);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load wallet:', err);
-      } finally {
-        setLoading(false);
+    // Fetch live balance
+    getWalletAction().then(res => {
+      if (res.success && res.balances) {
+        setBalance(res.balances.totalBalance);
       }
-    };
+    });
 
-    fetchWalletData();
+    // Fetch user payment records
+    getUserPaymentDetailsAction().then(res => {
+      if (res.success && res.details) {
+        setPaymentDetails(res.details);
+      }
+    });
   }, []);
 
-  if (loading) {
-    return <div className="flex-1 flex items-center justify-center bg-gray-50 min-h-screen"><div className="animate-spin w-8 h-8 border-4 border-[#e42e2a] border-t-transparent rounded-full"></div></div>;
-  }
+  const currentDisplayBalance = wallet?.totalBalance ?? balance;
 
-  if (!sessionUser) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-gray-50 min-h-screen">
-        <div className="w-16 h-16 rounded-2xl bg-white border border-gray-200 flex items-center justify-center text-[#e42e2a] mb-4 shadow-sm">
-          <Wallet className="w-8 h-8" />
-        </div>
-        <h2 className="text-xl font-black text-gray-900 tracking-tight">Login to Access Wallet</h2>
-        <p className="text-sm text-gray-500 mt-2 max-w-xs font-medium">
-          Manage your funds, add deposits, claim bonuses and request instant withdrawals.
-        </p>
-        <Link
-          href="/login"
-          onClick={() => audioHaptics.playTap()}
-          className="bg-[#e42e2a] text-white hover:bg-red-700 px-8 py-3 rounded-xl text-sm font-bold shadow-md mt-6 transition-colors uppercase tracking-wider"
-        >
-          Login / Sign Up
-        </Link>
-      </div>
-    );
-  }
+  const handleNav = (path: string) => {
+    audioHaptics.playTap();
+    router.push(path);
+  };
 
   return (
-    <div className="flex-1 flex flex-col px-4 pt-6 pb-24 space-y-6 bg-gray-50 min-h-screen">
-      <div>
-        <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-          Wallet & Balances
-        </h1>
-        <p className="text-sm text-gray-500 mt-1 font-medium">
-          Real-time separate balances and immutable audit ledger.
-        </p>
-      </div>
-
-      {/* Main Wallet Balance Card */}
-      <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-5 relative overflow-hidden">
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">
-            Total Playable Balance
-          </span>
-          <div className="flex items-center gap-1 text-[11px] text-green-700 font-bold bg-green-50 px-2.5 py-1 rounded-full border border-green-200">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Encrypted Vault</span>
-          </div>
-        </div>
-
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-2xl text-gray-400 font-bold">₹</span>
-          <span className="text-5xl font-black text-gray-900 tracking-tight">
-            {balances.totalBalance.toLocaleString()}
-          </span>
-        </div>
-
-        {/* Separated Balance Breakdown */}
-        <div className="grid grid-cols-3 gap-3 pt-4 border-t border-gray-100">
-          <div className="bg-gray-50 p-3 rounded-xl border border-gray-200 text-center">
-            <span className="text-[10px] uppercase font-bold text-gray-500 block mb-1">Cash</span>
-            <span className="text-sm font-black text-gray-900">
-              ₹{balances.cashBalance.toLocaleString()}
-            </span>
-          </div>
-
-          <div className="bg-red-50 p-3 rounded-xl border border-red-100 text-center">
-            <span className="text-[10px] uppercase font-bold text-[#e42e2a] flex items-center justify-center gap-1 mb-1">
-              <Gift className="w-3 h-3" />
-              <span>Bonus</span>
-            </span>
-            <span className="text-sm font-black text-[#e42e2a]">
-              ₹{balances.bonusBalance.toLocaleString()}
-            </span>
-          </div>
-
-          <div className="bg-gray-50 p-3 rounded-xl border border-gray-200 text-center">
-            <span className="text-[10px] uppercase font-bold text-gray-400 flex items-center justify-center gap-1 mb-1">
-              <Lock className="w-3 h-3" />
-              <span>Locked</span>
-            </span>
-            <span className="text-sm font-black text-gray-400">
-              ₹{balances.lockedBalance.toLocaleString()}
-            </span>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-3 pt-2">
-          <Link
-            href="/wallet/add-money"
-            onClick={() => audioHaptics.playTap()}
-            className="bg-[#e42e2a] text-white hover:bg-red-700 py-3.5 rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 transition-colors uppercase tracking-wider"
-          >
-            <Plus className="w-5 h-5 stroke-[2.5]" />
-            <span>Add Money</span>
-          </Link>
-
-          <Link
-            href="/wallet/withdraw"
-            onClick={() => audioHaptics.playTap()}
-            className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-200 py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm uppercase tracking-wider"
-          >
-            <ArrowUpRight className="w-5 h-5 text-[#e42e2a] stroke-[2.5]" />
-            <span>Withdraw</span>
-          </Link>
-        </div>
-
-        {/* Deposit History Status Link */}
-        <Link
-          href="/wallet/history"
-          onClick={() => audioHaptics.playTap()}
-          className="w-full bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-colors uppercase tracking-wider mt-1"
+    <div className="flex-1 flex flex-col min-h-screen bg-[#fbf2f2] text-gray-900 pb-24 select-none">
+      {/* 1. Header Bar */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-red-100 px-4 py-3 flex items-center justify-between shadow-2xs">
+        {/* Menu Toggle */}
+        <button
+          onClick={() => {
+            audioHaptics.playTap();
+            setShowMenu(true);
+          }}
+          className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-800 shadow-2xs active:scale-95 transition-transform"
+          aria-label="Open navigation menu"
         >
-          <Clock className="w-4 h-4 text-amber-600" />
-          <span>View Deposit Requests Status</span>
-        </Link>
-      </div>
+          <Menu className="w-5 h-5" />
+        </button>
 
-      {/* Transaction History Feed */}
-      <div className="space-y-4 pt-2">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
-            <History className="w-4 h-4 text-[#e42e2a]" />
-            <span>Transaction Ledger</span>
-          </h2>
-          <span className="text-[11px] text-gray-500 font-bold bg-gray-200 px-2 py-0.5 rounded-md">{transactions.length} records</span>
+        {/* Brand Logo */}
+        <div 
+          onClick={() => handleNav('/')}
+          className="flex items-center gap-2 cursor-pointer active:scale-98 transition-transform"
+        >
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#e42e2a] to-[#c61e1b] flex items-center justify-center text-white font-black text-xl shadow-xs">
+            7
+          </div>
+          <span className="text-xl font-black tracking-tight text-[#e42e2a]">
+            MANTRI777
+          </span>
         </div>
 
-        <div className="space-y-3">
-          {transactions.map((txn) => {
-            const isCredit =
-              txn.type === 'DEPOSIT' ||
-              txn.type === 'BET_WON' ||
-              txn.type === 'WELCOME_BONUS';
+        {/* Right Side: Balance Pill + Notifications */}
+        <div className="flex items-center gap-2">
+          {/* Balance Pill */}
+          <div 
+            onClick={() => handleNav('/passbook')}
+            className="flex items-center gap-1.5 bg-white border border-gray-200 pl-1 pr-3 py-1 rounded-full shadow-2xs cursor-pointer active:scale-95 transition-transform"
+          >
+            <div className="w-6 h-6 rounded-full bg-[#e42e2a] text-white flex items-center justify-center font-bold text-xs shadow-2xs">
+              ₹
+            </div>
+            <span className="font-black text-xs md:text-sm text-gray-900">
+              {currentDisplayBalance.toFixed(2)}
+            </span>
+          </div>
 
-            return (
-              <div
-                key={txn.id}
-                className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center justify-between"
-              >
-                <div className="flex items-center gap-3.5">
-                  <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${
-                      isCredit
-                        ? 'bg-green-50 text-green-600 border border-green-100'
-                        : 'bg-red-50 text-[#e42e2a] border border-red-100'
-                    }`}
-                  >
-                    {isCredit ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
-                  </div>
+          {/* Notification Bell */}
+          <button
+            onClick={() => handleNav('/notifications')}
+            className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-700 shadow-2xs active:scale-95 transition-transform"
+            aria-label="Notifications"
+          >
+            <Bell className="w-4 h-4" />
+          </button>
+        </div>
+      </header>
 
-                  <div>
-                    <h4 className="text-sm font-bold text-gray-900">{txn.type.replace('_', ' ')}</h4>
-                    <span className="text-[11px] font-medium text-gray-500">
-                      {new Date(txn.created_at).toLocaleDateString()} • Ref: {txn.id.substring(0,8)}
-                    </span>
-                  </div>
+      {/* 2. Main Content Cards */}
+      <main className="flex-1 px-4 py-5 space-y-5 max-w-md mx-auto w-full">
+        {/* CARD 1: Cashier */}
+        <div className="bg-white rounded-2xl shadow-sm border border-red-100 overflow-hidden">
+          {/* Header Bar */}
+          <div className="bg-[#e42e2a] text-white py-2.5 px-4 text-center">
+            <h2 className="text-base font-black tracking-wide">Cashier</h2>
+          </div>
+
+          {/* Items List */}
+          <div className="divide-y divide-gray-100">
+            {/* Add Fund */}
+            <div
+              onClick={() => handleNav('/wallet/add-money')}
+              className="px-4 py-3.5 flex items-center justify-between hover:bg-red-50/40 active:bg-red-50 transition-colors cursor-pointer group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-red-50 text-[#e42e2a] flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Wallet className="w-5 h-5 fill-[#e42e2a]/20 stroke-[2.2]" />
                 </div>
-
-                <div className="text-right">
-                  <span
-                    className={`text-base font-black tracking-tight block ${
-                      isCredit ? 'text-green-600' : 'text-gray-900'
-                    }`}
-                  >
-                    {isCredit ? '+' : '-'}₹{txn.amount.toLocaleString()}
-                  </span>
-                  <span className="text-[9px] uppercase font-bold text-gray-400">
-                    {txn.status}
-                  </span>
-                </div>
+                <span className="text-sm md:text-base font-black text-gray-900">Add Fund</span>
               </div>
-            );
-          })}
-          
-          {transactions.length === 0 && (
-             <div className="text-center py-8 text-gray-400 text-sm font-semibold">No transactions yet.</div>
-          )}
+              <span className="text-red-400 font-black text-sm tracking-tighter">
+                &gt;&gt;&gt;
+              </span>
+            </div>
+
+            {/* Withdraw Fund */}
+            <div
+              onClick={() => handleNav('/wallet/withdraw')}
+              className="px-4 py-3.5 flex items-center justify-between hover:bg-red-50/40 active:bg-red-50 transition-colors cursor-pointer group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-red-50 text-[#e42e2a] flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <CreditCard className="w-5 h-5 fill-[#e42e2a]/20 stroke-[2.2]" />
+                </div>
+                <span className="text-sm md:text-base font-black text-gray-900">Withdraw Fund</span>
+              </div>
+              <span className="text-red-400 font-black text-sm tracking-tighter">
+                &gt;&gt;&gt;
+              </span>
+            </div>
+
+            {/* Add Bank Details */}
+            <div
+              onClick={() => handleNav('/payment-setup?method=BANK')}
+              className="px-4 py-3.5 flex items-center justify-between hover:bg-red-50/40 active:bg-red-50 transition-colors cursor-pointer group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-red-50 text-[#e42e2a] flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Building2 className="w-5 h-5 fill-[#e42e2a]/20 stroke-[2.2]" />
+                </div>
+                <span className="text-sm md:text-base font-black text-gray-900">Add Bank Details</span>
+              </div>
+              <span className="text-red-400 font-black text-sm tracking-tighter">
+                &gt;&gt;&gt;
+              </span>
+            </div>
+
+            {/* Add UPI ID */}
+            <div
+              onClick={() => handleNav('/payment-setup?method=UPI')}
+              className="px-4 py-3.5 flex items-center justify-between hover:bg-red-50/40 active:bg-red-50 transition-colors cursor-pointer group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-red-50 text-[#e42e2a] flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <CreditCard className="w-5 h-5 fill-[#e42e2a]/20 stroke-[2.2]" />
+                </div>
+                <span className="text-sm md:text-base font-black text-gray-900">Add UPI ID</span>
+              </div>
+              <span className="text-red-400 font-black text-sm tracking-tighter">
+                &gt;&gt;&gt;
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
+
+        {/* CARD 2: History */}
+        <div className="bg-white rounded-2xl shadow-sm border border-red-100 overflow-hidden">
+          {/* Header Bar */}
+          <div className="bg-[#e42e2a] text-white py-2.5 px-4 text-center">
+            <h2 className="text-base font-black tracking-wide">History</h2>
+          </div>
+
+          {/* Items List */}
+          <div className="divide-y divide-gray-100">
+            {/* Deposit History */}
+            <div
+              onClick={() => handleNav('/passbook?type=deposit')}
+              className="px-4 py-3.5 flex items-center justify-between hover:bg-red-50/40 active:bg-red-50 transition-colors cursor-pointer group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-red-50 text-[#e42e2a] flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <RefreshCw className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <span className="text-sm md:text-base font-black text-gray-900">Deposit History</span>
+              </div>
+              <span className="text-red-400 font-black text-sm tracking-tighter">
+                &gt;&gt;&gt;
+              </span>
+            </div>
+
+            {/* Withdraw History */}
+            <div
+              onClick={() => handleNav('/passbook?type=withdrawal')}
+              className="px-4 py-3.5 flex items-center justify-between hover:bg-red-50/40 active:bg-red-50 transition-colors cursor-pointer group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-red-50 text-[#e42e2a] flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Banknote className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <span className="text-sm md:text-base font-black text-gray-900">Withdraw History</span>
+              </div>
+              <span className="text-red-400 font-black text-sm tracking-tighter">
+                &gt;&gt;&gt;
+              </span>
+            </div>
+
+            {/* Bank Details History */}
+            <div
+              onClick={() => {
+                audioHaptics.playTap();
+                setSelectedHistoryModal('BANK');
+              }}
+              className="px-4 py-3.5 flex items-center justify-between hover:bg-red-50/40 active:bg-red-50 transition-colors cursor-pointer group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-red-50 text-[#e42e2a] flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Building2 className="w-5 h-5 fill-[#e42e2a]/20 stroke-[2.2]" />
+                </div>
+                <span className="text-sm md:text-base font-black text-gray-900">Bank Details History</span>
+              </div>
+              <span className="text-red-400 font-black text-sm tracking-tighter">
+                &gt;&gt;&gt;
+              </span>
+            </div>
+
+            {/* UPI ID History */}
+            <div
+              onClick={() => {
+                audioHaptics.playTap();
+                setSelectedHistoryModal('UPI');
+              }}
+              className="px-4 py-3.5 flex items-center justify-between hover:bg-red-50/40 active:bg-red-50 transition-colors cursor-pointer group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-red-50 text-[#e42e2a] flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <CreditCard className="w-5 h-5 fill-[#e42e2a]/20 stroke-[2.2]" />
+                </div>
+                <span className="text-sm md:text-base font-black text-gray-900">UPI ID History</span>
+              </div>
+              <span className="text-red-400 font-black text-sm tracking-tighter">
+                &gt;&gt;&gt;
+              </span>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* 3. Bottom Navigation Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-red-100 shadow-lg px-2 py-1.5 flex items-center justify-around max-w-md mx-auto">
+        {/* History */}
+        <button
+          onClick={() => handleNav('/passbook')}
+          className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-900 py-1 px-2 transition-colors active:scale-95"
+        >
+          <HistoryIcon className="w-5 h-5 stroke-[2]" />
+          <span className="text-[10px] font-bold">History</span>
+        </button>
+
+        {/* Passbook */}
+        <button
+          onClick={() => handleNav('/passbook')}
+          className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-900 py-1 px-2 transition-colors active:scale-95"
+        >
+          <BookOpen className="w-5 h-5 stroke-[2]" />
+          <span className="text-[10px] font-bold">Passbook</span>
+        </button>
+
+        {/* Home */}
+        <button
+          onClick={() => handleNav('/')}
+          className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-900 py-1 px-2 transition-colors active:scale-95"
+        >
+          <HomeIcon className="w-5 h-5 stroke-[2]" />
+          <span className="text-[10px] font-bold">Home</span>
+        </button>
+
+        {/* Funds (Active Red) */}
+        <button
+          onClick={() => handleNav('/wallet')}
+          className="flex flex-col items-center gap-1 text-[#e42e2a] py-1 px-2 transition-colors active:scale-95"
+        >
+          <div className="relative">
+            <Wallet className="w-5 h-5 stroke-[2.5] fill-[#e42e2a]/20" />
+            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#e42e2a]"></span>
+          </div>
+          <span className="text-[10px] font-black">Funds</span>
+        </button>
+
+        {/* Support */}
+        <button
+          onClick={() => handleNav('/support')}
+          className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-900 py-1 px-2 transition-colors active:scale-95"
+        >
+          <Headphones className="w-5 h-5 stroke-[2]" />
+          <span className="text-[10px] font-bold">Support</span>
+        </button>
+      </nav>
+
+      {/* 4. Sliding Side Drawer */}
+      {showMenu && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex animate-fade-in">
+          <div className="w-72 bg-white h-full shadow-2xl flex flex-col justify-between p-5 animate-slide-in">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-[#e42e2a] text-white flex items-center justify-center font-black">
+                    7
+                  </div>
+                  <span className="font-black text-lg text-[#e42e2a]">MANTRI777</span>
+                </div>
+                <button
+                  onClick={() => setShowMenu(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-1">
+                <button
+                  onClick={() => {
+                    setShowMenu(false);
+                    handleNav('/');
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-gray-800 hover:bg-red-50 hover:text-[#e42e2a] transition-colors"
+                >
+                  <HomeIcon className="w-4 h-4" />
+                  <span>Home Markets</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowMenu(false);
+                    handleNav('/wallet');
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold bg-red-50 text-[#e42e2a]"
+                >
+                  <Wallet className="w-4 h-4" />
+                  <span>Funds & Cashier</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowMenu(false);
+                    handleNav('/passbook');
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-gray-800 hover:bg-red-50 hover:text-[#e42e2a] transition-colors"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span>Passbook & Bets</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowMenu(false);
+                    handleNav('/profile');
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-gray-800 hover:bg-red-50 hover:text-[#e42e2a] transition-colors"
+                >
+                  <Building2 className="w-4 h-4" />
+                  <span>My Profile & Security</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowMenu(false);
+                    handleNav('/support');
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-gray-800 hover:bg-red-50 hover:text-[#e42e2a] transition-colors"
+                >
+                  <Headphones className="w-4 h-4" />
+                  <span>24x7 WhatsApp Support</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100 pt-4 text-center">
+              <span className="text-[11px] text-gray-400 font-bold">MANTRI777 Secure v2.4</span>
+            </div>
+          </div>
+          <div className="flex-1" onClick={() => setShowMenu(false)}></div>
+        </div>
+      )}
+
+      {/* 5. Modals for Bank & UPI Details History */}
+      {selectedHistoryModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full border border-gray-200 shadow-xl space-y-4 relative">
+            <button
+              onClick={() => setSelectedHistoryModal(null)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {selectedHistoryModal === 'BANK' ? (
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-red-50 text-[#e42e2a] flex items-center justify-center mx-auto">
+                  <Building2 className="w-6 h-6" />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-base font-black text-gray-900">Saved Bank Details</h3>
+                  <p className="text-xs text-gray-500 mt-1">Used for automatic payout withdrawals</p>
+                </div>
+
+                {paymentDetails?.bankAccountNumber ? (
+                  <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200 space-y-2 text-left">
+                    <div>
+                      <span className="text-[10px] text-gray-400 font-bold uppercase block">Account Holder</span>
+                      <span className="text-xs font-black text-gray-900">{paymentDetails.bankAccountName || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-gray-400 font-bold uppercase block">Bank Name</span>
+                      <span className="text-xs font-black text-gray-900">{paymentDetails.bankName || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-gray-400 font-bold uppercase block">Account Number</span>
+                      <span className="text-xs font-mono font-black text-gray-900">•••• •••• {paymentDetails.bankAccountNumber.slice(-4)}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-gray-400 font-bold uppercase block">IFSC Code</span>
+                      <span className="text-xs font-mono font-black text-gray-900">{paymentDetails.bankIfsc || 'N/A'}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 text-center space-y-2">
+                    <p className="text-xs font-bold text-amber-800">No bank account details saved yet.</p>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => {
+                    setSelectedHistoryModal(null);
+                    handleNav('/payment-setup?method=BANK');
+                  }}
+                  className="w-full bg-[#e42e2a] hover:bg-red-700 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider shadow-sm transition-colors"
+                >
+                  {paymentDetails?.bankAccountNumber ? 'Update Bank Details' : 'Add Bank Details Now'}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-red-50 text-[#e42e2a] flex items-center justify-center mx-auto">
+                  <CreditCard className="w-6 h-6" />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-base font-black text-gray-900">Saved UPI ID</h3>
+                  <p className="text-xs text-gray-500 mt-1">Used for instant 1-tap payout withdrawals</p>
+                </div>
+
+                {paymentDetails?.upiId ? (
+                  <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200 space-y-2 text-left">
+                    <div>
+                      <span className="text-[10px] text-gray-400 font-bold uppercase block">Active UPI VPA</span>
+                      <span className="text-sm font-mono font-black text-blue-700">{paymentDetails.upiId}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px] text-green-700 font-bold">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                      <span>Verified for Instant Payouts</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 text-center space-y-2">
+                    <p className="text-xs font-bold text-amber-800">No UPI ID saved yet.</p>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => {
+                    setSelectedHistoryModal(null);
+                    handleNav('/payment-setup?method=UPI');
+                  }}
+                  className="w-full bg-[#e42e2a] hover:bg-red-700 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider shadow-sm transition-colors"
+                >
+                  {paymentDetails?.upiId ? 'Update UPI ID' : 'Add UPI ID Now'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
