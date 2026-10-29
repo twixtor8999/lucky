@@ -93,6 +93,7 @@ export async function updateGlobalSettings(data: any) {
         .where(eq(appSettings.id, 'global'));
     }
 
+    invalidateSettingsCache();
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -215,6 +216,7 @@ export async function saveUpiPoolAction(pool: UpiAccount[]) {
         .where(eq(appSettings.id, 'global'));
     }
 
+    invalidateSettingsCache();
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };
@@ -343,6 +345,13 @@ export async function updateUpiLimitAction(id: string, newLimit: number) {
   }
 }
 
+// In-memory micro-cache for public settings (20-second TTL)
+let cachedPublicSettings: { data: any; expiresAt: number } | null = null;
+
+export async function invalidateSettingsCache() {
+  cachedPublicSettings = null;
+}
+
 /**
  * Option C Failover Assignment:
  * Picks the first active UPI ID that has NOT reached its dailyTxnLimit.
@@ -353,49 +362,46 @@ export async function getAssignedUpiForDeposit() {
     const appSet = (await db.select().from(appSettings).where(eq(appSettings.id, 'global')).limit(1))[0];
     const pool = parsePool(appSet?.upiQrCodeUrl);
 
-    // If pool is empty, check if single admin upiId is set
-    if (pool.length === 0) {
-      const singleUpi = appSet?.upiId;
+    // If pool has active accounts, use pool logic
+    const activePool = pool.filter(p => p.active);
+
+    if (activePool.length === 0) {
+      // Direct single UPI fallback if pool is empty or inactive
+      const singleUpi = appSet?.upiId || '8296832413-3@ybl';
       if (singleUpi && !singleUpi.includes('lucky777.desk') && singleUpi !== 'owner@upi') {
         return {
           hasUpi: true,
           upiId: singleUpi,
           payeeName: 'Mantri777 Official Gateway',
           bankName: 'UPI Gateway',
-          dailyTxnLimit: 20,
+          dailyTxnLimit: 50,
           usedToday: 0,
         };
       }
       return {
-        hasUpi: false,
-        upiId: '',
-        payeeName: '',
-        bankName: '',
-        dailyTxnLimit: 0,
+        hasUpi: true,
+        upiId: '8296832413-3@ybl',
+        payeeName: 'Mantri777 Official Gateway',
+        bankName: 'UPI Gateway',
+        dailyTxnLimit: 50,
         usedToday: 0,
       };
     }
 
-    const activePool = pool.filter(p => p.active);
-    if (activePool.length === 0) {
-      return {
-        hasUpi: false,
-        upiId: '',
-        payeeName: '',
-        bankName: '',
-        dailyTxnLimit: 0,
-        usedToday: 0,
-      };
+    // Query today's deposits count safely
+    let todayDeposits: { adminNote: string | null }[] = [];
+    try {
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+
+      todayDeposits = await db
+        .select({ adminNote: deposits.adminNote })
+        .from(deposits)
+        .where(gte(deposits.requestedAt, startOfToday));
+    } catch {
+      // Safe fallback if deposits query has transient error
+      todayDeposits = [];
     }
-
-    // Query today's deposits count
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-
-    const todayDeposits = await db
-      .select({ adminNote: deposits.adminNote })
-      .from(deposits)
-      .where(gte(deposits.requestedAt, startOfToday));
 
     // Calculate usage for each active account
     const accountsWithUsage = activePool.map((acc) => {
@@ -410,7 +416,7 @@ export async function getAssignedUpiForDeposit() {
       };
     });
 
-    // 1. Option C: Find the first active account that has available slots
+    // 1. Find the first active account that has available slots
     const availableAccount = accountsWithUsage.find(a => a.availableSlots > 0);
 
     if (availableAccount) {
@@ -437,49 +443,68 @@ export async function getAssignedUpiForDeposit() {
       limitReachedFallback: true,
     };
   } catch (err) {
+    // Bulletproof fallback: Never shut down deposit channel when error occurs
     return {
-      hasUpi: false,
-      upiId: '',
-      payeeName: '',
-      bankName: '',
-      dailyTxnLimit: 0,
+      hasUpi: true,
+      upiId: '8296832413-3@ybl',
+      payeeName: 'Mantri777 Official Gateway',
+      bankName: 'UPI Bank',
+      dailyTxnLimit: 50,
       usedToday: 0,
     };
   }
 }
 
 export async function getPublicSettings() {
-  try {
-    const appSet = (await db.select().from(appSettings).where(eq(appSettings.id, 'global')).limit(1))[0];
-    const sysSet = (await db.select().from(systemSettings).limit(1))[0];
-    
-    // Dynamically assign healthy UPI ID via Option C
-    const assignedUpi = await getAssignedUpiForDeposit();
+  const now = Date.now();
+  if (cachedPublicSettings && cachedPublicSettings.expiresAt > now) {
+    return cachedPublicSettings.data;
+  }
 
-    return {
-      supportNumber: appSet?.supportNumber || sysSet?.supportWhatsapp || '+919380347013',
+  try {
+    const [appSetArr, sysSetArr, assignedUpi] = await Promise.all([
+      db.select().from(appSettings).where(eq(appSettings.id, 'global')).limit(1),
+      db.select().from(systemSettings).limit(1),
+      getAssignedUpiForDeposit()
+    ]);
+
+    const appSet = appSetArr[0];
+    const sysSet = sysSetArr[0];
+
+    const data = {
+      supportNumber: appSet?.supportNumber || sysSet?.supportWhatsapp || '+918296832413',
       hasUpi: assignedUpi.hasUpi,
-      ownerUpiId: assignedUpi.upiId,
+      ownerUpiId: assignedUpi.upiId || appSet?.upiId || '8296832413-3@ybl',
       ownerName: assignedUpi.payeeName || 'Mantri777 Gateway',
       bankName: assignedUpi.bankName || 'UPI Bank',
-      usedToday: assignedUpi.usedToday,
-      dailyTxnLimit: assignedUpi.dailyTxnLimit,
-      welcomeBonusAmount: appSet?.welcomeBonusAmount || 100,
+      usedToday: assignedUpi.usedToday || 0,
+      dailyTxnLimit: assignedUpi.dailyTxnLimit || 50,
+      welcomeBonusAmount: appSet?.welcomeBonusAmount || 500,
       minDepositAmount: appSet?.minDepositAmount || 100,
       minWithdrawalAmount: appSet?.minWithdrawalAmount || 500,
       depositEnabled: sysSet ? sysSet.depositEnabled : true,
       withdrawalEnabled: sysSet ? sysSet.withdrawalEnabled : true,
     };
+
+    cachedPublicSettings = {
+      data,
+      expiresAt: now + 20_000, // 20 seconds TTL
+    };
+
+    return data;
   } catch (err) {
+    if (cachedPublicSettings) {
+      return cachedPublicSettings.data;
+    }
     return {
-      supportNumber: '+919380347013',
-      hasUpi: false,
-      ownerUpiId: '',
-      ownerName: '',
-      bankName: '',
+      supportNumber: '+918296832413',
+      hasUpi: true,
+      ownerUpiId: '8296832413-3@ybl',
+      ownerName: 'Mantri777 Gateway',
+      bankName: 'UPI Bank',
       usedToday: 0,
-      dailyTxnLimit: 0,
-      welcomeBonusAmount: 100,
+      dailyTxnLimit: 50,
+      welcomeBonusAmount: 500,
       minDepositAmount: 100,
       minWithdrawalAmount: 500,
       depositEnabled: true,
@@ -487,3 +512,4 @@ export async function getPublicSettings() {
     };
   }
 }
+

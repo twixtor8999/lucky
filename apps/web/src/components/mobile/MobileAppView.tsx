@@ -85,9 +85,10 @@ export default function MobileAppView({
   const [starlineGames, setStarlineGames] = useState<GameItem[]>(initialStarlineGames);
   const [jackpotGames, setJackpotGames] = useState<GameItem[]>(initialJackpotGames);
 
-  // Real-time polling for market results and play buttons
+  // Real-time polling for market results and play buttons (smart 10s sync)
   useEffect(() => {
     const interval = setInterval(async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       try {
         const fresh = await getLiveHomepageData();
         if (fresh) {
@@ -96,7 +97,7 @@ export default function MobileAppView({
           setJackpotGames(fresh.jackpotGames);
         }
       } catch (err) {}
-    }, 5000);
+    }, 10000);
     return () => clearInterval(interval);
   }, []);
 

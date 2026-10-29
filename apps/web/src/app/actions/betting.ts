@@ -57,7 +57,7 @@ export async function placeBetAction(reqInput: PlaceBetRequest) {
 
     // Validate Market Status Server-Side
     const marketsData = await getMarketsAction();
-    const market = marketsData.markets?.find(m => m.id === req.marketId);
+    const market = marketsData.markets?.find((m: any) => m.id === req.marketId);
     
     if (!market) {
       return { success: false, message: 'Market not found' };

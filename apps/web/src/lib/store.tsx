@@ -176,22 +176,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {}
 
-    // Seed and load markets globally with 8-second live sync
-    seedMarketsAction().then(() => {
-      getMarketsAction().then(res => {
-        if (res.success && res.markets) {
-          setMarkets(res.markets);
-        }
-      });
+    // Load markets initially
+    getMarketsAction().then(res => {
+      if (res.success && res.markets) {
+        setMarkets(res.markets);
+      }
     });
 
+    // Smart background sync every 20 seconds (pauses when tab is hidden)
     const marketSyncInterval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       getMarketsAction().then(res => {
         if (res.success && res.markets) {
           setMarkets(res.markets);
         }
       });
-    }, 8000);
+    }, 20000);
 
     return () => clearInterval(marketSyncInterval);
   }, []);

@@ -42,6 +42,7 @@ export default function AddMoneyPage() {
   
   // Settings & user details
   const [settings, setSettings] = useState<any>(null);
+  const [loadingSettings, setLoadingSettings] = useState(true);
   const [userPayment, setUserPayment] = useState<any>(null);
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [copiedOrder, setCopiedOrder] = useState(false);
@@ -64,12 +65,17 @@ export default function AddMoneyPage() {
   const minDeposit = settings?.minDepositAmount || 100;
 
   useEffect(() => {
-    getPublicSettings().then(res => {
-      setSettings(res);
-      if (res.minDepositAmount && res.minDepositAmount > 500) {
-        setAmount(res.minDepositAmount);
-      }
-    });
+    getPublicSettings()
+      .then(res => {
+        setSettings(res);
+        if (res.minDepositAmount && res.minDepositAmount > 500) {
+          setAmount(res.minDepositAmount);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        setLoadingSettings(false);
+      });
 
     getUserPaymentDetailsAction().then(res => {
       if (res.success && res.details) {
@@ -341,7 +347,13 @@ export default function AddMoneyPage() {
         </div>
 
         {/* Payment Gateway Box */}
-        {!settings?.ownerUpiId ? (
+        {loadingSettings ? (
+          <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm animate-pulse space-y-4">
+            <div className="h-4 bg-gray-200 rounded w-1/3 mx-auto"></div>
+            <div className="h-28 bg-gray-100 rounded-2xl"></div>
+            <div className="h-10 bg-gray-200 rounded-xl"></div>
+          </div>
+        ) : !settings?.ownerUpiId ? (
           <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm text-center space-y-3">
             <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto text-amber-600">
               <AlertCircle className="w-6 h-6" />

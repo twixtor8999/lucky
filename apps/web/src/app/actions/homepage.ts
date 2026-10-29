@@ -16,12 +16,27 @@ function formatTo12Hour(timeStr?: string | null): string {
   return `${hourFormatted}:${minute} ${ampm}`;
 }
 
-export async function getLiveHomepageData() {
-  const allMarkets = await db.select().from(markets);
-  const schedules = await db.select().from(marketSchedules);
-  const allResults = await db.select().from(results).orderBy(desc(results.resultDate), desc(results.createdAt));
+// In-memory micro-cache (4-second TTL) to eliminate redundant DB pressure from multi-tab live polling
+let cachedHomepageData: { data: any; expiresAt: number } | null = null;
 
-  const { dateStr, currentMinutes } = getISTDateAndTime();
+export async function invalidateHomepageCache() {
+  cachedHomepageData = null;
+}
+
+export async function getLiveHomepageData() {
+  const now = Date.now();
+  if (cachedHomepageData && cachedHomepageData.expiresAt > now) {
+    return cachedHomepageData.data;
+  }
+
+  try {
+    const [allMarkets, schedules, allResults] = await Promise.all([
+      db.select().from(markets),
+      db.select().from(marketSchedules),
+      db.select().from(results).orderBy(desc(results.resultDate), desc(results.createdAt))
+    ]);
+
+    const { dateStr, currentMinutes } = getISTDateAndTime();
 
   const formattedMarkets = allMarkets.map(market => {
     const latestResult = allResults.find(r => r.marketId === market.id);
@@ -81,10 +96,29 @@ export async function getLiveHomepageData() {
     .filter(m => !m.name.toLowerCase().includes('starline') && !m.name.toLowerCase().includes('jackpot'))
     .sort((a, b) => a.rawOpensAt.localeCompare(b.rawOpensAt));
 
-  return {
-    mainGames,
-    starlineGames: formattedMarkets.filter(m => m.name.toLowerCase().includes('starline')),
-    jackpotGames: formattedMarkets.filter(m => m.name.toLowerCase().includes('jackpot')),
-    topWinners,
-  };
+    const data = {
+      mainGames,
+      starlineGames: formattedMarkets.filter(m => m.name.toLowerCase().includes('starline')),
+      jackpotGames: formattedMarkets.filter(m => m.name.toLowerCase().includes('jackpot')),
+      topWinners,
+    };
+
+    cachedHomepageData = {
+      data,
+      expiresAt: now + 4000, // 4-second TTL
+    };
+
+    return data;
+  } catch (err) {
+    if (cachedHomepageData) {
+      return cachedHomepageData.data;
+    }
+    return {
+      mainGames: [],
+      starlineGames: [],
+      jackpotGames: [],
+      topWinners: [],
+    };
+  }
 }
+

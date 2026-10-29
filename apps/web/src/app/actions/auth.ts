@@ -127,6 +127,7 @@ export async function verifyOtpAction(phoneInput: string, otpInput: string) {
         gt(otpVerifications.expiresAt, new Date())
       ));
       
+    const latestVerification = verifications[verifications.length - 1];
     const isValid = otp === '1234' || (latestVerification ? await bcrypt.compare(otp, latestVerification.otpHash) : false);
 
     if (!isValid && !latestVerification) {

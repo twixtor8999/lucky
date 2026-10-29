@@ -32,8 +32,9 @@ export default function LiveGamesSection({
   const [jackpotGames, setJackpotGames] = useState<GameItem[]>(initialJackpotGames);
 
   useEffect(() => {
-    // Sync live state every 5 seconds so admin declarations reflect immediately without manual page reload
+    // Sync live state every 10 seconds (pauses when tab is hidden)
     const interval = setInterval(async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       try {
         const fresh = await getLiveHomepageData();
         if (fresh) {
@@ -44,7 +45,7 @@ export default function LiveGamesSection({
       } catch (err) {
         // silent fallback
       }
-    }, 5000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, []);

@@ -9,8 +9,7 @@ import AppAdaptiveRoot from '@/components/mobile/AppAdaptiveRoot';
 import HomeDownloadHeroButton from '@/components/HomeDownloadHeroButton';
 import HeaderDownloadButton from '@/components/HeaderDownloadButton';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 5;
 
 export default async function HomePage() {
   const { mainGames: games, starlineGames, jackpotGames, topWinners } = await getLiveHomepageData();

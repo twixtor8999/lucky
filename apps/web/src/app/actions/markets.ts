@@ -4,6 +4,7 @@ import { db, markets, marketSchedules, results } from '@zenvora/shared/db';
 import { eq, asc, desc } from 'drizzle-orm';
 import { MarketStatus, Market } from '@zenvora/shared';
 import crypto from 'crypto';
+import { getISTDateAndTime, parseSlotMinutes } from '@/lib/time-utils';
 
 const SEED_MARKETS = [
   { slug: 'kalyan-morning', name: 'Kalyan Morning', status: 'OPEN', openTime: '09:00', closeTime: '10:00' },
@@ -44,14 +45,27 @@ export async function seedMarketsAction() {
   return { success: true, message: 'Seeded' };
 }
 
-import { getISTDateAndTime, parseSlotMinutes } from '@/lib/time-utils';
+// In-memory micro-cache (5-second TTL) for markets feed
+let cachedMarketsData: { data: any; expiresAt: number } | null = null;
+
+export async function invalidateMarketsCache() {
+  cachedMarketsData = null;
+}
 
 export async function getMarketsAction() {
-  const allMarkets = await db.select().from(markets).orderBy(asc(markets.name));
-  const schedules = await db.select().from(marketSchedules);
-  const allResults = await db.select().from(results).orderBy(desc(results.resultDate), desc(results.createdAt));
+  const now = Date.now();
+  if (cachedMarketsData && cachedMarketsData.expiresAt > now) {
+    return cachedMarketsData.data;
+  }
 
-  const { dateStr, currentMinutes, currentTime } = getISTDateAndTime();
+  try {
+    const [allMarkets, schedules, allResults] = await Promise.all([
+      db.select().from(markets).orderBy(asc(markets.name)),
+      db.select().from(marketSchedules),
+      db.select().from(results).orderBy(desc(results.resultDate), desc(results.createdAt))
+    ]);
+
+    const { dateStr, currentMinutes, currentTime } = getISTDateAndTime();
 
   const result: Market[] = allMarkets.map(m => {
     const sched = schedules.find(s => s.marketId === m.id);
@@ -122,11 +136,24 @@ export async function getMarketsAction() {
 
   result.sort((a, b) => (a.openTime || '99').localeCompare(b.openTime || '99'));
 
-  return { success: true, markets: result };
+    const data = { success: true, markets: result };
+    cachedMarketsData = {
+      data,
+      expiresAt: now + 5000, // 5-second TTL
+    };
+
+    return data;
+  } catch (err) {
+    if (cachedMarketsData) {
+      return cachedMarketsData.data;
+    }
+    return { success: false, markets: [] };
+  }
 }
 
 export async function getMarketAction(slug: string) {
   const res = await getMarketsAction();
   if (!res.success || !res.markets) return null;
-  return res.markets.find(m => m.slug === slug) || null;
+  return res.markets.find((m: any) => m.slug === slug) || null;
 }
+
